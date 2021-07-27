@@ -37,12 +37,12 @@ async def on_ready():
     print("author:slowmachine#9665")
     await bot.change_presence(activity=discord.Game(name="use .help for commands"))
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, CommandNotFound):
-        embed = Embed(description=f":x: Command not found.",
-                      color=0xDD2222)
-        await ctx.send(embed=embed)
+#@bot.event
+#async def on_command_error(ctx, error):
+#    if isinstance(error, CommandNotFound):
+#        embed = Embed(description=f":x: Command not found.",
+#                      color=0xDD2222)
+#        await ctx.send(embed=embed)
 
 @bot.event
 async def on_guild_join(guild):
