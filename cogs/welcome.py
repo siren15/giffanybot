@@ -141,7 +141,7 @@ class Welcomer(commands.Cog):
                     if muted in before.roles:
                         return
 
-                    users = db.find(persistentroles, {"guildid":before.guild.id, "userid":before.id})
+                    users = await db.find(persistentroles, {"guildid":before.guild.id, "userid":before.id})
                     for user in users:
                         if before.id == user['userid']:
                             return
