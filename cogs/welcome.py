@@ -128,9 +128,8 @@ class Welcomer(commands.Cog):
                         channelid = ch.achannelid
                         channel = get(before.guild.channels, id=channelid)
 
-                    welcome_message = await db.find(welcomer, welcomer.guildid==before.guild.id, welcomer.channelid==channel.id)
-                    for wm in welcome_message:
-                        welcome_message = wm.amsg
+                    wm = await db.find_one(welcomer, welcomer.guildid==before.guild.id, welcomer.channelid==channel.id)
+                    welcome_message = wm.amsg
 
                     limborole = get(before.guild.roles, name="Limbo")
                     muted = get(before.guild.roles, name="Muted")
@@ -150,9 +149,9 @@ class Welcomer(commands.Cog):
                         newRole = next(role for role in after.roles if role not in before.roles)
                         if newRole.name == "Gravity Falls Citizens":
                             member_mention = before.mention
-                            member = before
+                            user = before
                             guild = before.guild
-                            await channel.send(welcome_message.format(guild=guild, user=member, member=member_mention))
+                            await channel.send(str(welcome_message).format(guild=guild, user=user, member=member_mention))
 
     @commands.group(invoke_without_command=True)
     @commands.has_permissions(administrator=True)
