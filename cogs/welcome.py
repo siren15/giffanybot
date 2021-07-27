@@ -80,18 +80,16 @@ class Welcomer(commands.Cog):
                     file = discord.File(fp=f'wcard_{member.id}.png')
 
                     db = await odm.connect()
-                    channel_id  = await db.find(welcomer, welcomer.guildid==member.guild.id)
-                    for ch in channel_id:
-                        channelid = ch.channelid
-                        channel = member.guild.get_channel(int(channelid))
+                    channel_id  = await db.find_one(welcomer, {"guildid":member.guild.id})
+                    channelid = channel_id.channelid
+                    channel = member.guild.get_channel(int(channelid))
                     try:
                         if is_event_active(member.guild, 'welcome_message') == True:
-                            welcome_message = await db.find(welcomer, welcomer.guildid==member.guild.id, welcomer.channelid==channelid)
-                            for wm in welcome_message:
-                                welcome_message = wm.msg
-                                guild = member.guild
-                                mention = member.mention
-                                await channel.send(welcome_message.format(guild=guild, user=member, member=mention), file=file)
+                            wm = await db.find_one(welcomer, welcomer.guildid==member.guild.id, welcomer.channelid==channelid)
+                            welcome_message = wm.msg
+                            guild = member.guild
+                            mention = member.mention
+                            await channel.send(welcome_message.format(guild=guild, user=member, member=mention), file=file)
                     except EventNotActivatedInGuild:
                         await channel.send(file=file)
                     os.remove(f'welcomecard_{member.id}.png')
@@ -140,8 +138,9 @@ class Welcomer(commands.Cog):
                         return
 
                     users = await db.find_one(persistentroles, {"guildid":before.guild.id, "userid":before.id})
-                    if before.id == users.userid:
-                        return
+                    if users is not None:
+                        if before.id == users.userid:
+                            return
 
                     if len(before.roles) < len(after.roles):
                         newRole = next(role for role in after.roles if role not in before.roles)
