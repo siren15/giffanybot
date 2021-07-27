@@ -25,7 +25,7 @@ gif_token = os.environ["gif_token"]
 
 async def get_prefix(client, message):
     db = await odm.connect()
-    prefix = table.find_one(prefixes, {"guildid":message.guild.id})
+    prefix = db.find_one(prefixes, {"guildid":message.guild.id})
     return prefix.prefix
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents)
