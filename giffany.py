@@ -23,7 +23,7 @@ messages = joined = 0
 ###################################
 gif_token = os.environ["gif_token"]
 
-def get_prefix(client, message):
+async def get_prefix(client, message):
     db = await odm.connect()
     prefix = table.find_one(prefixes, {"guildid":message.guild.id})
     return prefix.prefix
