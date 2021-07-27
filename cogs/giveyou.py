@@ -9,7 +9,7 @@ from odmantic import Field, Model
 from datetime import datetime, timedelta
 from typing import Optional
 import discord
-import dataset
+
 from discord import Member, Embed
 from discord.ext import commands
 from discord.ext.commands import Greedy, CommandNotFound
