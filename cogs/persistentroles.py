@@ -27,13 +27,7 @@ class persistentroles(commands.Cog):
                 cluster = Mongo.connect()
                 db = cluster["giffany"]
                 member_roles = ",".join([str(role.id) for role in member.roles if role.name != '@everyone'])
-                user = db['persistentroles'].find({"guildid":member.guild.id, "userid":member.id})
-                for u in user:
-                    if u['userid'] == member.id:
-                        db['persistentroles'].delete_one({"guildid":member.guild.id, "userid":member.id})
-                        db['persistentroles'].insert_one({"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
-                    else:
-                        db['persistentroles'].insert_one({"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
+                db['persistentroles'].insert_one({"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
         else:
             return
 
