@@ -123,12 +123,11 @@ class Welcomer(commands.Cog):
             if iscogactive(before.guild, 'welcomer') == True:
                 if is_event_active(before.guild, 'advanced_welcome_message'):
                     db = await odm.connect()
-                    channel_id  = await db.find(welcomer, welcomer.guildid==before.guild.id)
-                    for ch in channel_id:
-                        channelid = ch.achannelid
-                        channel = get(before.guild.channels, id=channelid)
+                    channel_id  = await db.find_one(welcomer, {"guildid":before.guild.id})
+                    channelid = channel_id.achannelid
+                    channel = get(before.guild.channels, id=channelid)
 
-                    wm = await db.find_one(welcomer, welcomer.guildid==before.guild.id, welcomer.channelid==channel.id)
+                    wm = await db.find_one(welcomer, {"guildid":before.guild.id, "channelid":before.channel.id})
                     welcome_message = wm.amsg
 
                     limborole = get(before.guild.roles, name="Limbo")
@@ -140,10 +139,9 @@ class Welcomer(commands.Cog):
                     if muted in before.roles:
                         return
 
-                    users = await db.find(persistentroles, {"guildid":before.guild.id, "userid":before.id})
-                    for user in users:
-                        if before.id == user['userid']:
-                            return
+                    users = await db.find_one(persistentroles, {"guildid":before.guild.id, "userid":before.id})
+                    if before.id == users.userid:
+                        return
 
                     if len(before.roles) < len(after.roles):
                         newRole = next(role for role in after.roles if role not in before.roles)
