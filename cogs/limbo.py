@@ -6,7 +6,7 @@ from mongo import *
 from odmantic import AIOEngine
 from typing import Optional
 from odmantic import Field, Model
-import datetime
+from datetime import datetime
 from customchecks import *
 from discord import Embed
 from discord.ext import commands
@@ -59,7 +59,7 @@ class Limbo(commands.Cog):
             if limborole in member.roles and member_id != member.id:
                 await member.remove_roles(limborole, reason=reason)
                 embed = discord.Embed(description=f"{member} **was released from limbo**\n**For:** {reason}",
-                                      timestamp=datetime.datetime.utcnow(),
+                                      timestamp=datetime.utcnow(),
                                       color=0xF893B2)
                 embed.set_thumbnail(url=f'{member.avatar_url}')
                 embed.set_footer(text=f'User ID: {member.id}')
@@ -78,7 +78,7 @@ class Limbo(commands.Cog):
             await member.remove_roles(limborole, reason=reason)
             table.delete_one({"guildid":ctx.guild.id, "memberid":member.id})
             embed = discord.Embed(description=f"{member} **was released from limbo**\n**For:** {reason}",
-                                  timestamp=datetime.datetime.utcnow(),
+                                  timestamp=datetime.utcnow(),
                                   color=0xF893B2)
             embed.set_thumbnail(url=f'{member.avatar_url}')
             embed.set_footer(text=f'User ID: {member.id}')
@@ -96,7 +96,7 @@ class Limbo(commands.Cog):
             await member.add_roles(limborole, reason=reason)
             limbo_channel = get(ctx.guild.channels, name='limbo')
             embed = discord.Embed(description=f"{member} **was thrown to limbo**\n**For:** {reason}",
-                                  timestamp=datetime.datetime.utcnow(),
+                                  timestamp=datetime.utcnow(),
                                   color=0xF893B2)
             embed.set_thumbnail(url=f'{member.avatar_url}')
             embed.set_footer(text=f'User ID: {member.id}')
@@ -152,7 +152,7 @@ class Limbo(commands.Cog):
         await member.add_roles(limborole, reason=reason)
         limbo_channel = get(ctx.guild.channels, name='limbo')
         embed = discord.Embed(description=f"{member} **was thrown to limbo**\n**For:** {reason}",
-                              timestamp=datetime.datetime.utcnow(),
+                              timestamp=datetime.utcnow(),
                               color=0xF893B2)
         embed.set_thumbnail(url=f'{member.avatar_url}')
         embed.set_footer(text=f'User ID: {member.id}')
@@ -210,7 +210,7 @@ class Limbo(commands.Cog):
             await member.edit(roles=roles, reason=reason)
             table.delete_one({"guildid":ctx.guild.id, "memberid":member.id})
             embed = discord.Embed(description=f"{member} **was released from limbo**\n**For:** {reason}",
-                                  timestamp=datetime.datetime.utcnow(),
+                                  timestamp=datetime.utcnow(),
                                   color=0xF893B2)
             embed.set_thumbnail(url=f'{member.avatar_url}')
             embed.set_footer(text=f'User ID: {member.id}')
@@ -232,7 +232,7 @@ class Limbo(commands.Cog):
             log_channel = message.guild.get_channel(int(log_ch_from_db))
 
             if message.channel.id == 736680179253903491:
-                embed = discord.Embed(title="Limbo log", timestamp=datetime.datetime.utcnow(), color=0xF893B2)
+                embed = discord.Embed(title="Limbo log", timestamp=datetime.utcnow(), color=0xF893B2)
                 embed.set_thumbnail(url=f'{message.author.avatar_url}')
                 embed.add_field(name=f"{message.author}", value=f"{message.content}", inline=False)
                 embed.set_footer(text=f'User ID: {message.author.id}')
