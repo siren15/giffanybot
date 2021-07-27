@@ -1,0 +1,15 @@
+discord.py
+git+https://github.com/Rapptz/discord-ext-menus@4429b564fd8f031deaccd60caa5be7320e248816
+mysql-connector-python==8.0.25
+mysqlclient==2.0.3
+dataset
+discord-pretty-help==1.2.1
+numpy==1.19.5
+opencv-python==4.5.1.48
+stuf
+requests
+pymongo
+odmantic
+motor
+dnspython
+Pillow==8.3.1
