@@ -127,7 +127,7 @@ class Welcomer(commands.Cog):
                     channelid = channel_id.achannelid
                     channel = get(before.guild.channels, id=channelid)
 
-                    wm = await db.find_one(welcomer, {"guildid":before.guild.id, "channelid":channelid})
+                    wm = await db.find_one(welcomer, {"guildid":before.guild.id, "achannelid":channelid})
                     welcome_message = wm.amsg
 
                     limborole = get(before.guild.roles, name="Limbo")
