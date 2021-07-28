@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime
 import pymongo
+import re
 from pymongo import MongoClient
 from mongo import *
 from motor.motor_asyncio import AsyncIOMotorClient

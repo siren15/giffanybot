@@ -7,7 +7,7 @@ from mongo import *
 from odmantic import AIOEngine
 from typing import Optional
 from odmantic import Field, Model
-
+import re
 import discord
 from aiohttp import request
 from discord import Member, Embed

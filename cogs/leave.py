@@ -9,6 +9,7 @@ from odmantic import Field, Model
 from discord.ext import commands
 from discord.utils import get
 from customchecks import *
+import re
 from motor.motor_asyncio import AsyncIOMotorClient
 
 class Welcomer(commands.Cog):

@@ -20,6 +20,7 @@ from dateutil.relativedelta import *
 from customchecks import *
 import random
 import string
+import re
 
 def random_string_generator():
     characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'

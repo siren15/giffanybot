@@ -1,5 +1,5 @@
 import discord
-
+import re
 import pymongo
 from pymongo import MongoClient
 from mongo import *

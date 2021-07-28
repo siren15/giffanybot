@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from customchecks import *
+import re
 
 class ReactionRoles(commands.Cog):
     """reaction roles module"""

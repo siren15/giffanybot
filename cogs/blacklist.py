@@ -11,6 +11,7 @@ from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Greedy, CheckFailure
 from customchecks import *
+import re
 
 
 class UserFilter(commands.Cog):

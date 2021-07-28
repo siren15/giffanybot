@@ -1,6 +1,7 @@
 import discord
 import hashlib
 import os
+import re
 import requests
 from discord.ext import commands
 from customchecks import *

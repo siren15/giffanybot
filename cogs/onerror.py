@@ -9,6 +9,7 @@ from mongo import *
 from odmantic import AIOEngine
 from typing import Optional
 from odmantic import Field, Model
+import re
 
 
 class OnError(commands.Cog):

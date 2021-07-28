@@ -1,5 +1,6 @@
 from datetime import datetime
 import discord
+import re
 from discord import Member, Embed
 from discord.ext import commands
 from discord.ext.commands import Cog, BucketType
