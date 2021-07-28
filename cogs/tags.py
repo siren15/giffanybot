@@ -30,16 +30,6 @@ class Tags(commands.Cog):
     @has_active_cogs("tags")
     async def tag(self, ctx, *,tag_Name=None):
         """let's me recall tags"""
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table2 = db['tag']
-        tagnames = table2.find({"names":{'$regex': f'{tag_Name}', '$options':'i'}, "guild_id":ctx.channel.guild.id})
-        names = [tn['names'].lower() for tn in tagnames]
-
-        tagscontent = table2.find({"names":{'$regex': f'{tag_Name}', '$options':'i'}, "guild_id":ctx.channel.guild.id})
-        for tc in tagscontent:
-            tagcontent = tc['content']
-
         if tag_Name == None:
             embed = Embed(
                 description=":x: Please provide a tag name",
@@ -47,16 +37,22 @@ class Tags(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        if tag_Name.lower() not in names:
+        db = await odm.connect()
+        regx = re.compile(f"^{tag_Name}$", re.IGNORECASE)
+        tn = await db.find_one(tag, {"names":regx, "guild_id":ctx.channel.guild.id})
+
+        if tn is None:
             embed = Embed(
-                description=":x: Couldn't find that tag",
+                description=f":x: `{tag_Name}` is not a tag",
                 color=0xDD2222)
             await ctx.send(embed=embed)
             return
 
-        if tag_Name.lower() in names:
+        tagscontent = await db.find_one(tag, {"names":regx, "guild_id":ctx.channel.guild.id})
+        tagcontent = tagscontent.content
+
+        if tag_Name.lower() == tn.names.lower():
             await ctx.send(f"{tagcontent}")
-            return
 
     @tag.command(aliases=['c'])
     @user_has_role()

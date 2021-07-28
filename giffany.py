@@ -49,7 +49,7 @@ async def on_guild_join(guild):
     cluster = Mongo.connect()
     db = cluster["giffany"]
     table = db['prefixes']
-    table.insert_one({"guildid":guild.id, "prefix":'z.'})
+    table.insert_one({"guildid":guild.id, "prefix":'.'})
 
 @bot.event
 async def on_guild_remove(guild):
