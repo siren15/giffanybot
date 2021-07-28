@@ -416,7 +416,8 @@ async def restrictcommand(ctx, cmd_name=None, *, role:discord.Role=None):
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['hasrole']
-        roleid = table.find({"guildid":guild.id, "command":{'$regex': f'{cmd_name}', '$options':'i'}})
+        regx = re.compile(f"^{cmd_name}$", re.IGNORECASE)
+        roleid = table.find({"guildid":guild.id, "command":regx})
         for role in roleid:
             return role['command']
         return None
@@ -455,7 +456,8 @@ async def restrictdelete(ctx, *, cmd_name):
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['hasrole']
-        roleid = table.find({"guildid":guild.id, "command":{'$regex': f'{cmd_name}', '$options':'i'}})
+        regx = re.compile(f"^{cmd_name}$", re.IGNORECASE)
+        roleid = table.find({"guildid":guild.id, "command":regx})
         for role in roleid:
             return role['command']
         return None

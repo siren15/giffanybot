@@ -60,7 +60,8 @@ class OnError(commands.Cog):
                 cluster = Mongo.connect()
                 db = cluster["giffany"]
                 table = db['hasrole']
-                roleid = table.find({"guildid":guild.id, "command":{'$regex': f'{command.qualified_name}', '$options': 'i'}})
+                regx = re.compile(f"^{command.qualified_name}$", re.IGNORECASE)
+                roleid = table.find({"guildid":guild.id, "command":regx})
                 for role in roleid:
                     return role['role']
                 return None

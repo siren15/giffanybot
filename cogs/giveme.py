@@ -42,7 +42,8 @@ class giveme(commands.Cog):
         def names(guild, giveme_name):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            names = db['giveme'].find({"name":{'$regex': f'{giveme_name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{giveme_name}$", re.IGNORECASE)
+            names = db['giveme'].find({"name":regx, "guildid":guild.id})
             for n in names:
                 name = n['name'].lower()
                 return name
@@ -51,7 +52,8 @@ class giveme(commands.Cog):
         def role_ids(giveme_name, guild):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            search = db['giveme'].find({"name":{'$regex': f'{giveme_name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{giveme_name}$", re.IGNORECASE)
+            search = db['giveme'].find({"name":regx, "guildid":guild.id})
             for se in search:
                 s = se[f'roleid']
                 return s
@@ -60,16 +62,18 @@ class giveme(commands.Cog):
         def req_ids(giveme_name, guild):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            search = db['giveme'].find({"name":{'$regex': f'{giveme_name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{giveme_name}$", re.IGNORECASE)
+            search = db['giveme'].find({"name":regx, "guildid":guild.id})
             for se in search:
                 s = se[f'reqid']
                 return s
             return None
 
         def ignore_ids(giveme_name, guild):
-            db = dataset.connect('sqlite:///journal3.db')
-            db.begin()
-            search = db['giveme'].find({"name":{'$regex': f'{giveme_name}', '$options': 'i'}, "guildid":guild.id})
+            cluster = Mongo.connect()
+            db = cluster["giffany"]
+            regx = re.compile(f"^{giveme_name}$", re.IGNORECASE)
+            search = db['giveme'].find({"name":regx, "guildid":guild.id})
             for se in search:
                 s = se[f'ignoreid']
                 return s
@@ -135,7 +139,8 @@ class giveme(commands.Cog):
         def names(guild, name):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            names = db['giveme'].find({"name":{'$regex': f'{name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{name}$", re.IGNORECASE)
+            names = db['giveme'].find({"name":, "guildid":guild.id})
             for n in names:
                 name = ''
                 name = name + f"{n['name'].lower()}"

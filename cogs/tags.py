@@ -68,7 +68,8 @@ class Tags(commands.Cog):
             return m.channel == ctx.channel and m.author == ctx.message.author
 
         if tagname != None:
-            tagnames = table.find({"names":{'$regex': f'{tagname}', '$options':'i'}, "guild_id":ctx.channel.guild.id})
+            regx = re.compile(f"^{tagname}$", re.IGNORECASE)
+            tagnames = table.find({"names":regx, "guild_id":ctx.channel.guild.id})
             tn = [n['names'] for n in tagnames]
             if tn != []:
                 embed = Embed(
@@ -121,7 +122,8 @@ class Tags(commands.Cog):
                     return
 
                 else:
-                    tagnames = table.find({"names":{'$regex': f'{tagname.content}', '$options':'i'}, "guild_id":ctx.guild.id})
+                    regx = re.compile(f"^{tagname.content}$", re.IGNORECASE)
+                    tagnames = table.find({"names":regx, "guild_id":ctx.guild.id})
                     tn = [n['names'] for n in tagnames]
                     if tn != []:
                         embed = Embed(
@@ -554,7 +556,8 @@ class Tags(commands.Cog):
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['tag']
-        tagnames = table.find({"names":{'$regex': f'{tagname}', '$options':'i'}, "guild_id":ctx.guild.id})
+        regx = re.compile(f"^{tagname}$", re.IGNORECASE)
+        tagnames = table.find({"names":regx, "guild_id":ctx.guild.id})
         for tn in tagnames:
             name = tn['names'].lower()
 

@@ -35,7 +35,8 @@ class giveyou(commands.Cog):
         def field(item, giveyou_name, guild):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            results = db['giveyou'].find({"name":{'$regex': f'{giveyou_name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{giveyou_name}$", re.IGNORECASE)
+            results = db['giveyou'].find({"name":regx, "guildid":guild.id})
             for r in results:
                 return r[f'{item}']
             return None
@@ -83,7 +84,8 @@ class giveyou(commands.Cog):
         def names(guild, name):
             cluster = Mongo.connect()
             db = cluster["giffany"]
-            names = db['giveyou'].find({"name":{'$regex': f'{name}', '$options': 'i'}, "guildid":guild.id})
+            regx = re.compile(f"^{name}$", re.IGNORECASE)
+            names = db['giveyou'].find({"name":{regx, "guildid":guild.id})
             for n in names:
                 name = ''
                 name = name + f"{n['name'].lower()}"
