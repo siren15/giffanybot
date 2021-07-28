@@ -85,7 +85,7 @@ class giveyou(commands.Cog):
             cluster = Mongo.connect()
             db = cluster["giffany"]
             regx = re.compile(f"^{name}$", re.IGNORECASE)
-            names = db['giveyou'].find({"name":{regx, "guildid":guild.id})
+            names = db['giveyou'].find({"name":regx, "guildid":guild.id})
             for n in names:
                 name = ''
                 name = name + f"{n['name'].lower()}"
