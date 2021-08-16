@@ -22,7 +22,7 @@ intents = discord.Intents.default()
 intents.members = True
 messages = joined = 0
 ###################################
-gif_token = os.environ["gif_token"]
+token = os.environ["gif_token"]
 
 async def get_prefix(client, message):
     db = await odm.connect()
@@ -104,7 +104,7 @@ async def enable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_unban', 'member_roles_update']
+    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']
@@ -259,7 +259,7 @@ async def disable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_unban', 'member_roles_update']
+    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']
@@ -524,4 +524,4 @@ for filename in os.listdir('./cogs'):
     if filename.endswith('.py'):
         bot.load_extension(f'cogs.{filename[:-3]}')
 
-bot.run(gif_token)
+bot.run(token)
