@@ -16,6 +16,7 @@ from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 from stuf import stuf
+from discord_slash import *
 
 ###################################
 intents = discord.Intents.default()
@@ -31,6 +32,10 @@ async def get_prefix(client, message):
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents)
 bot.remove_command('help')
+
+slash = SlashCommand(bot, sync_commands=True)
+test_guilds = ['435038183231848449', '149167686159564800']
+
 
 @bot.event
 async def on_ready():
@@ -104,7 +109,7 @@ async def enable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_unban', 'member_roles_update']
+    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']
@@ -259,7 +264,7 @@ async def disable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_unban', 'member_roles_update']
+    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']

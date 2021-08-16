@@ -10,3 +10,4 @@ motor
 dnspython
 Pillow==8.3.1
 python-dateutil
+discord-py-slash-command

@@ -31,20 +31,10 @@ class Logging(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['logs']
-
-        def chids(guild):
-            cluster = Mongo.connect()
-            db = cluster["giffany"]
-            channelids = db['logs'].find({"guild_id":guild.id})
-            for channel in channelids:
-                id = channel['channel_id']
-                return id
-            return None
-
-        logchannel = chids(ctx.guild)
+        db = await odm.connect()
+        channelid = await db.find_one(logs, {"guild_id":ctx.guild.id})
+        id = channelid.channel_id
+        logchannel = ctx.guild.get_channel(id)
         if logchannel == None:
             table.insert_one({"guild_id":ctx.guild.id, "channel_id":channel.id})
             embed = discord.Embed(description=f"I have assigned {channel.mention} as a log channel.",
@@ -63,10 +53,9 @@ class Logging(commands.Cog):
         if iscogactive(message.guild, 'logging') == True:
             if is_event_active(message.guild, 'message_deleted'):
                 db = await odm.connect()
-                chids = await db.find(logs, logs.guild_id==message.guild.id)
-                for i in chids:
-                    chid = i.channel_id
-                log_channel = message.guild.get_channel(chid)
+                channelid = await db.find_one(logs, {"guild_id":message.guild.id})
+                id = channelid.channel_id
+                log_channel = message.guild.get_channel(id)
 
                 def geturl(string):
                     regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
@@ -155,11 +144,9 @@ class Logging(commands.Cog):
         if iscogactive(before.guild, 'logging') == True:
             if is_event_active(before.guild, 'message_edited'):
                 db = await odm.connect()
-                channel_id  = await db.find(logs, logs.guild_id==before.guild.id)
-                for ch in channel_id:
-                    channelid = ch.channel_id
-
-                log_channel = before.guild.get_channel(int(channelid))
+                channelid = await db.find_one(logs, {"guild_id":before.guild.id})
+                id = channelid.channel_id
+                log_channel = before.guild.get_channel(id)
 
                 if before.content == after.content:
                     return
@@ -180,17 +167,10 @@ class Logging(commands.Cog):
             return
         if iscogactive(member.guild, 'logging') == True:
             if is_event_active(member.guild, 'member_join'):
-                def chids(guild):
-                    cluster = Mongo.connect()
-                    db = cluster["giffany"]
-                    channelids = db['logs'].find({"guild_id":guild.id})
-                    for channel in channelids:
-                        id = channel['channel_id']
-                        return id
-                    return None
-
-                log_ch_from_db = chids(member.guild)
-                log_channel = member.guild.get_channel(int(log_ch_from_db))
+                db = await odm.connect()
+                channelid = await db.find_one(logs, {"guild_id":member.guild.id})
+                id = channelid.channel_id
+                log_channel = member.guild.get_channel(id)
 
                 d1 = member.created_at
                 d2 = datetime.utcnow()
@@ -201,7 +181,7 @@ class Logging(commands.Cog):
                 w = (int)((d % 365) / 7)
                 d = (int)(d - ((y * 365) + (w)))
 
-                embed = discord.Embed(description=f"{member.mention} joined {member.guild}",
+                embed = discord.Embed(description=f"{member.mention}|{member} joined {member.guild}",
                                       timestamp=datetime.utcnow(),
                                       color=0x9af791)
                 embed.set_thumbnail(url=member.avatar_url)
@@ -215,19 +195,12 @@ class Logging(commands.Cog):
             return
         if iscogactive(member.guild, 'logging') == True:
             if is_event_active(member.guild, 'member_leave'):
-                def chids(guild):
-                    cluster = Mongo.connect()
-                    db = cluster["giffany"]
-                    channelids = db['logs'].find({"guild_id":guild.id})
-                    for channel in channelids:
-                        id = channel['channel_id']
-                        return id
-                    return None
+                db = await odm.connect()
+                channelid = await db.find_one(logs, {"guild_id":member.guild.id})
+                id = channelid.channel_id
+                log_channel = member.guild.get_channel(id)
 
-                log_ch_from_db = chids(member.guild)
-                log_channel = member.guild.get_channel(int(log_ch_from_db))
-
-                embed = discord.Embed(description=f"{member.mention} left {member.guild}",
+                embed = discord.Embed(description=f"{member.mention}|{member} left {member.guild}",
                                       timestamp=datetime.utcnow(),
                                       color=0xfca85f)
                 embed.set_thumbnail(url=member.avatar_url)
@@ -235,67 +208,70 @@ class Logging(commands.Cog):
                 await log_channel.send(embed=embed)
 
     @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        if member.bot:
+            return
+        if iscogactive(member.guild, 'logging') == True:
+            if is_event_active(member.guild, 'member_kick'):
+                async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.kick):
+                    if entry.target.id == member.id:
+                        db = await odm.connect()
+                        channelid = await db.find_one(logs, {"guild_id":member.guild.id})
+                        id = channelid.channel_id
+                        log_channel = member.guild.get_channel(id)
+
+                        embed = discord.Embed(description='{0.user.mention}({0.user}|{0.user.id}) kicked {0.target.mention}|{0.target} | `{0.reason}`'.format(entry),
+                                              timestamp=datetime.utcnow(),
+                                              color=0xfca85f)
+                        embed.set_thumbnail(url=entry.target.avatar_url)
+                        embed.set_footer(text=f'User ID: {entry.target.id}')
+                        await log_channel.send(embed=embed)
+
+    @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
         if iscogactive(guild, 'logging') == True:
             if is_event_active(guild, 'member_ban'):
-                def chids(guild):
-                    cluster = Mongo.connect()
-                    db = cluster["giffany"]
-                    channelids = db['logs'].find({"guild_id":guild.id})
-                    for channel in channelids:
-                        id = channel['channel_id']
-                        return id
-                    return None
+                async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
+                    if entry.target.id == user.id:
+                        db = await odm.connect()
+                        channelid = await db.find_one(logs, {"guild_id":guild.id})
+                        id = channelid.channel_id
+                        log_channel = member.guild.get_channel(id)
 
-                log_ch_from_db = chids(guild)
-                log_channel = guild.get_channel(int(log_ch_from_db))
-
-                embed = discord.Embed(description=f"{user.mention} was banned",
-                                      timestamp=datetime.utcnow(),
-                                      color=0xfc5f62)
-                embed.set_thumbnail(url=user.avatar_url)
-                embed.set_footer(text=f'User ID: {user.id}')
-                await log_channel.send(embed=embed)
+                        embed = discord.Embed(description='{0.user.mention}({0.user}|{0.user.id}) banned {0.target.mention}|{0.target} | `{0.reason}`'.format(entry),
+                                              timestamp=datetime.utcnow(),
+                                              color=0xfca85f)
+                        embed.set_thumbnail(url=entry.target.avatar_url)
+                        embed.set_footer(text=f'User ID: {entry.target.id}')
+                        await log_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
         if iscogactive(guild, 'logging') == True:
             if is_event_active(guild, 'member_unban'):
-                def chids(guild):
-                    cluster = Mongo.connect()
-                    db = cluster["giffany"]
-                    channelids = db['logs'].find({"guild_id":guild.id})
-                    for channel in channelids:
-                        id = channel['channel_id']
-                        return id
-                    return None
+                async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.unban):
+                    if entry.target.id == user.id:
+                        db = await odm.connect()
+                        channelid = await db.find_one(logs, {"guild_id":guild.id})
+                        id = channelid.channel_id
+                        log_channel = member.guild.get_channel(id)
 
-                log_ch_from_db = chids(guild)
-                log_channel = guild.get_channel(int(log_ch_from_db))
-
-                embed = discord.Embed(description=f"{user.mention} was unbanned",
-                                      timestamp=datetime.utcnow(),
-                                      color=0xF893B2)
-                embed.set_thumbnail(url=user.avatar_url)
-                embed.set_footer(text=f'User ID: {user.id}')
-                await log_channel.send(embed=embed)
+                        embed = discord.Embed(description='{0.user.mention}({0.user}|{0.user.id}) unbanned {0.target.mention}|{0.target} | `{0.reason}`'.format(entry),
+                                              timestamp=datetime.utcnow(),
+                                              color=0xfca85f)
+                        embed.set_thumbnail(url=entry.target.avatar_url)
+                        embed.set_footer(text=f'User ID: {entry.target.id}')
+                        await log_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         guild = before.guild
         if iscogactive(guild, 'logging') == True:
             if is_event_active(before.guild, 'member_roles_update'):
-                def chids(guild):
-                    cluster = Mongo.connect()
-                    db = cluster["giffany"]
-                    channelids = db['logs'].find({"guild_id":guild.id})
-                    for channel in channelids:
-                        id = channel['channel_id']
-                        return id
-                    return None
-
-                log_ch_from_db = chids(guild)
-                log_channel = guild.get_channel(int(log_ch_from_db))
+                db = await odm.connect()
+                channelid = await db.find_one(logs, {"guild_id":guild.id})
+                id = channelid.channel_id
+                log_channel = guild.get_channel(id)
 
                 if before.display_name != after.display_name:
                     embed = discord.Embed(description=f"{after.mention} changed their nickname",
@@ -316,8 +292,9 @@ class Logging(commands.Cog):
                     r = r + f"{nr.mention} "
                     new_role = nr
 
+                o_r = ''
                 for o in old_role:
-                    r = r + f"{o.mention} "
+                    o_r = o_r + f"{o.mention} "
                     old_role = o
 
                 if new_role:
@@ -328,7 +305,7 @@ class Logging(commands.Cog):
                     await log_channel.send(embed=embed)
 
                 if old_role:
-                    embed = discord.Embed(description=f"{after.mention} was removed from {r} ",
+                    embed = discord.Embed(description=f"{after.mention} was removed from {o_r} ",
                                           timestamp=datetime.utcnow(),
                                           color=0xF893B2)
                     embed.set_footer(text=f'User ID: {before.id}')

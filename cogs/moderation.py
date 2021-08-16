@@ -21,6 +21,8 @@ from customchecks import *
 import random
 import string
 import re
+from discord_slash import *
+test_guilds = ['435038183231848449', '149167686159564800']
 
 def random_string_generator():
     characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'
@@ -794,6 +796,8 @@ class Moderation(commands.Cog):
             await ctx.send(embed=embed)
             return
 
+
+
     @commands.command()
     @bot_has_permissions(manage_roles=True)
     @commands.has_permissions(kick_members=True)
@@ -814,103 +818,176 @@ class Moderation(commands.Cog):
         userids = table.find({"guildid":ctx.guild.id, "user":member.id})
         for u in userids:
             uid = u['user']
-        if (muterole.id in member_role_ids) and (member.id == uid):
-            roleids = table.find({"guildid":ctx.guild.id, "user":member.id})
-            for r in roleids:
-                rid = r['roles']
-            roles = [ctx.guild.get_role(int(id_)) for id_ in rid.split(",") if len(id_)]
+            if (muterole.id in member_role_ids) and (member.id == uid):
+                roleids = table.find({"guildid":ctx.guild.id, "user":member.id})
+                for r in roleids:
+                    rid = r['roles']
+                roles = [ctx.guild.get_role(int(id_)) for id_ in rid.split(",") if len(id_)]
 
-            await member.edit(roles=roles)
-            embed = discord.Embed(title="Member was unmuted",
-                                  description=member.mention + " was unmuted. \nReason: " + reason + "\nBy: " + ctx.message.author.mention,
-                                  timestamp=datetime.utcnow(),
-                                  color=0xF893B2)
-            embed.set_thumbnail(url=f'{member.avatar_url}')
-            embed.set_footer(text=f'User ID: {member.id}')
-            await ctx.send(embed=embed)
+                await member.edit(roles=roles)
+                embed = discord.Embed(title="Member was unmuted",
+                                      description=member.mention + " was unmuted. \nReason: " + reason + "\nBy: " + ctx.message.author.mention,
+                                      timestamp=datetime.utcnow(),
+                                      color=0xF893B2)
+                embed.set_thumbnail(url=f'{member.avatar_url}')
+                embed.set_footer(text=f'User ID: {member.id}')
+                await ctx.send(embed=embed)
 
-            table.delete_one({"guildid":ctx.guild.id, "user":member.id})
-        else:
-            embed = Embed(description=f":x: Member not muted",
-                          color=0xDD2222)
-            await ctx.send(embed=embed)
-            return
+                table.delete_one({"guildid":ctx.guild.id, "user":member.id})
+            else:
+                embed = Embed(description=f":x: Member not muted",
+                              color=0xDD2222)
+                await ctx.send(embed=embed)
+                return
 
     @tasks.loop(minutes=1)
     async def unmute_task(self):
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['mutes']
-        endtime = table.find({"endtime":{'$lte':f'{datetime.utcnow()}'}})
-        for e in endtime:
-            users = table.find({"endtime":e['endtime']})
-            for u in users:
-                user = u['user']
-                for guilds in self.bot.guilds:
-                    for members in guilds.members:
-                        if user == members.id:
-                            for role in members.roles:
-                                if "Muted" in role.name:
-                                    logchannel = discord.utils.get(guilds.channels, name="mod-log")
-                                    if iscogactive(guilds, 'moderation') == True:
-                                        roleids = table.find({"user":members.id, "guildid":guilds.id, "endtime":e['endtime']})
-                                        for r in roleids:
-                                            rid = r['roles']
-                                        roles = [guilds.get_role(int(id_)) for id_ in rid.split(",") if len(id_)]
-                                        await members.edit(roles=roles)
-                                        embed = discord.Embed(title="Member was unmuted",
-                                                              description=members.mention + " was unmuted. \nReason: Mute time expired.",
-                                                              timestamp=datetime.utcnow(),
-                                                              color=0xF893B2)
-                                        embed.set_thumbnail(url=f'{members.avatar_url}')
-                                        embed.set_footer(text=f'User ID: {members.id}')
-                                        await logchannel.send(embed=embed)
+        db = await odm.connect()
 
-                                        table.delete_one({"guildid":guilds.id, "user":members.id, "endtime":e['endtime']})
+        endtimes = await db.find(mutes, {'endtime':{'$lte':datetime.utcnow()}})
+        for m in endtimes:
+            try:
+                guild = await self.bot.get_guild(m.guildid)
+            except discord.NotFound:
+                print(f"[automod]|[unmute_task]{m.guildid} not found in the guild list")
+                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                await db.delete(entry_to_delete)
+                return
+
+            try:
+                member = await guild.get_member(m.user)
+            except discord.NotFound:
+                print(f"[automod]|[unmute_task]{m.user} not found in guild {guild}|{guild.id}")
+                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                await db.delete(entry_to_delete)
+                return
+
+            member = await guild.get_member(m.user)
+            roles = [guild.get_role(int(id_)) for id_ in m.roles.split(",") if len(id_)]
+            await = member.edit(roles=roles)
+
+            lchs = await db.find(logs, {'guild_id':guild.id})
+            for lch in lchs:
+            try:
+                logchannel = guild.get_channel(lch.channel_id)
+            except discord.NotFound:
+                print(f"[automod]|[unmute_task]{lch.channel_id} not found in guild {guild}|{guild.id}")
+                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                await db.delete(entry_to_delete)
+                return
+
+            embed = discord.Embed(description=f'{member.mention}|{member.id} **was unmuted** by **automod** | `Mute time expired`',
+                                  colour=0xF893B2
+                                  timestamp=datetime.utcnow())
+            embed.set_thumbnail(url=member.avatar_url)
+            await logchannel.send(embed=embed)
+            entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+            await db.delete(entry_to_delete)
 
     @commands.command(aliases=['modlogs'])
     @commands.has_permissions(kick_members=True)
     @has_active_cogs("moderation")
-    async def strikes(self, ctx, member: discord.User=None):
+    async def strikes(self, ctx, *, member: discord.User=None):
         """Lists all the strikes logged for the user."""
         if member == None:
             embed = Embed(description=f":x: Please provide a member",
                           color=0xDD2222)
             await ctx.send(embed=embed)
             return
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['strikes']
+
+        def chunks(l, n):
+            n = max(1, n)
+            return (l[i:i+n] for i in range(0, len(l), n))
+
+        def create_list(lst, n, s, e):
+            lst = list(chunks(lst, n))
+            for i in lst[s:e]:
+                lst = i
+            fl = ''
+            for n in lst:
+                fl = fl + n
+            return fl
+
+        def newpage(member, msg, sc, pages):
+            embed = Embed(title=f"__Strikes for {member}({member.id})__ [{sc} found]",
+                          description=msg,
+                          colour=0xF893B2)
+            embed.set_footer(text=pages)
+            return embed
+
+        def field(fld):
+            field = ''
+            for i in fld:
+                field = field + f"\n{i},"
+
+            return f
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['⬅️', '➡️']
+
+        async def checkforuser(guild, userid):
+            members = guild.members
+            for m in members:
+                if m.id == userid:
+                    return m
+                elif m.id != userid:
+                    user = await self.bot.fetch_user(userid)
+                    return f"{user}|{user.id}"
+                else:
+                    return f"Not found|{userid}"
+
+
+        db = await odm.connect()
+
         msg = ''
-        count = ''
-        strikeids = table.find({"guildid":ctx.guild.id, "user":member.id})
-        for sid in strikeids:
-            reasons = table.find({"guildid":ctx.guild.id, "user":member.id, "strikeid":sid['strikeid']})
-            actions = table.find({"guildid":ctx.guild.id, "user":member.id, "strikeid":sid['strikeid']})
-            moderators = table.find({"guildid":ctx.guild.id, "user":member.id, "strikeid":sid['strikeid']})
-            for r in reasons:
-                reason = r['reason']
-            for a in actions:
-                action = a['action']
-            for m in moderators:
-                moderator = m['moderator']
-                strike_id = sid['strikeid']
-                msg = msg + f'**Strike ID:** {strike_id} |**Action:** {action} |**Moderator:** {moderator} |**Reason:** {reason}\n'
-                count = count + f"{strike_id}" + ','
-        c = count.split(',')
-        if len(c) == 1:
+        strike = await db.find(strikes, {"guildid":ctx.guild.id, "user":member.id})
+        msg = [f"**Strike ID:** {s.strikeid} |**Reason:** {s.reason} |**Action**: {s.action} |**Moderator:** {s.moderator} |**Day:** {s.day} \n\n" for s in strike]
+        strikecount = [str(s.strikeid)+"\n" for s in strike]
+        sc = len(list(strikecount))
+
+        if strikecount == []:
             embed = Embed(description=f"There are no strikes for {member}.",
                           colour=0xF893B2)
             await ctx.send(embed=embed)
             return
 
-        embed = Embed(title=f"Strikes for {member} | {len(c) - 1} found",
-                      description=msg,
-                      colour=0xF893B2,
-                      timestamp=datetime.utcnow())
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=f'Member ID: {member.id}')
-        await ctx.send(embed=embed)
+        s = 0
+        e = 1
+        counter = 1
+        nc = list(chunks(strikecount, 10))
+
+        footer = f"Page:{counter}|{len(nc)}"
+        embedl = await ctx.send(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+        await embedl.add_reaction('⬅️')
+        await embedl.add_reaction('➡️')
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+
+            except asyncio.TimeoutError:
+                await embedl.clear_reactions()
+                break
+
+            if (reaction.emoji == '➡️') and (counter < len(nc)):
+                counter = counter + 1
+                s = s + 1
+                e = e + 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+                await embedl.remove_reaction('➡️', ctx.author)
+            else:
+                await embedl.remove_reaction('➡️', ctx.author)
+
+            if (reaction.emoji == '⬅️') and (counter > 1):
+                counter = counter - 1
+                s = s - 1
+                e = e - 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+                await embedl.remove_reaction('⬅️', ctx.author)
+            else:
+                await embedl.remove_reaction('⬅️', ctx.author)
 
     @commands.command()
     @commands.has_permissions(kick_members=True)
@@ -969,46 +1046,152 @@ class Moderation(commands.Cog):
             embed.set_footer(text=f'Member ID: {member.id}')
             await ctx.send(embed=embed)
 
+    @commands.command(aliases=['delwarn'])
+    @commands.has_permissions(kick_members=True)
+    @has_active_cogs("moderation")
+    async def warnremove(self, ctx, strikeid=None, *, reason='No reason provided'):
+        if strikeid == None:
+            embed = Embed(description=f":x: Please provide a strikeid",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+            return
+
+        db = await odm.connect()
+        table = strikes
+        s = await db.find_one(table, {"guildid":ctx.guild.id, "strikeid":strikeid, 'action':'Warn'})
+        if s.strikeid == strikeid:
+            embed = discord.Embed(title=f'Strike removed by {ctx.author}|{ctx.author.id} | {reason}',
+                                  description=f"**Strike ID:** {s.strikeid} |**Reason:** {s.reason} |**Action**: {s.action} |**Moderator:** {s.moderator} |**Day:** {s.day}",
+                                  colour=0xF893B2,
+                                  timestamp=datetime.utcnow())
+            await ctx.send(embed=embed)
+            await db.delete(s)
+        else:
+            embed = Embed(description=f":x: Warn with strike ID `{strikeid}` not found",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+
     @commands.command(aliases=['warns'])
     @commands.has_permissions(kick_members=True)
     @has_active_cogs("moderation")
-    async def warnings(self, ctx, member: discord.User=None):
+    async def warnings(self, ctx, *, member: discord.User=None):
         """Lists all the warns logged for the user."""
         if member == None:
             embed = Embed(description=f":x: Please provide a member",
                           color=0xDD2222)
             await ctx.send(embed=embed)
             return
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['strikes']
+
+        def chunks(l, n):
+            n = max(1, n)
+            return (l[i:i+n] for i in range(0, len(l), n))
+
+        def create_list(lst, n, s, e):
+            lst = list(chunks(lst, n))
+            for i in lst[s:e]:
+                lst = i
+            fl = ''
+            for n in lst:
+                fl = fl + n
+            return fl
+
+        def newpage(member, msg, sc, pages):
+            embed = Embed(title=f"__Warnings for {member}({member.id})__ [{sc} found]",
+                          description=msg,
+                          colour=0xF893B2)
+            embed.set_footer(text=pages)
+            return embed
+
+        def field(fld):
+            field = ''
+            for i in fld:
+                field = field + f"\n{i},"
+
+            return f
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['⬅️', '➡️']
+
+        async def checkforuser(guild, userid):
+            members = guild.members
+            for m in members:
+                if m.id == userid:
+                    return m
+                elif m.id != userid:
+                    user = await self.bot.fetch_user(userid)
+                    return f"{user}|{user.id}"
+                else:
+                    return f"Not found|{userid}"
+
+
+        db = await odm.connect()
+        table = strikes
+
         msg = ''
-        count = ''
-        strikeids = table.find({"guildid":ctx.guild.id, "user":member.id, "action":"Warn"})
-        for sid in strikeids:
-            reasons = table.find({"guildid":ctx.guild.id, "user":member.id, "strikeid":sid['strikeid']})
-            moderators = table.find({"guildid":ctx.guild.id, "user":member.id, "strikeid":sid['strikeid']})
+        strikeids = await db.find(table, {"guildid":ctx.guild.id, "user":member.id, "action":"Warn"})
+        for s in strikeids:
+            sid = s.strikeid
+            reasons = await db.find(table, {"guildid":ctx.guild.id, "user":member.id, "strikeid":s.strikeid})
+
+            moderators = await db.find(table, {"guildid":ctx.guild.id, "user":member.id, "strikeid":s.strikeid})
+
+            days = await db.find(table, {"guildid":ctx.guild.id, "user":member.id, "strikeid":s.strikeid})
             for r in reasons:
-                reason = r['reason']
+                reason = r.reason
             for m in moderators:
-                moderator = m['moderator']
-                strike_id = sid['strikeid']
-                msg = msg + f'**Strike ID:** {strike_id} |**Moderator:** {moderator} |**Reason:** {reason}\n'
-                count = count + f"{strike_id}" + ','
-        c = count.split(',')
-        if len(c) == 1:
-            embed = Embed(description=f":information_source: There are no warnings for {member}.",
-                          colour=discord.Colour.from_rgb(59, 136, 195))
+                mods = await checkforuser(ctx.guild, m.moderator)
+            for d in days:
+                day = d.day
+                msg = msg + f"**Strike ID:** {sid} |**Reason:** {reason} |**Moderator:** {mods} |**Day:** {day} \n\n ,"
+        msg = msg.split(',')
+
+        strikecount = [str(s.strikeid)+"\n" for s in strikeids]
+        sc = len(list(strikecount))
+
+
+        if strikecount == []:
+            embed = Embed(description=f"There are no warnings for {member}.",
+                          colour=0xF893B2)
             await ctx.send(embed=embed)
             return
 
-        embed = Embed(title=f"Warnings for {member} | {len(c) - 1} found",
-                      description=msg,
-                      colour=0xffba26,
-                      timestamp=datetime.utcnow())
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=f'Member ID: {member.id}')
-        await ctx.send(embed=embed)
+        s = 0
+        e = 1
+        counter = 1
+        nc = list(chunks(strikecount, 10))
+
+        footer = f"Page:{counter}|{len(nc)}"
+        embedl = await ctx.send(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+        await embedl.add_reaction('⬅️')
+        await embedl.add_reaction('➡️')
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+
+            except asyncio.TimeoutError:
+                await embedl.clear_reactions()
+                break
+
+            if (reaction.emoji == '➡️') and (counter < len(nc)):
+                counter = counter + 1
+                s = s + 1
+                e = e + 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+                await embedl.remove_reaction('➡️', ctx.author)
+            else:
+                await embedl.remove_reaction('➡️', ctx.author)
+
+            if (reaction.emoji == '⬅️') and (counter > 1):
+                counter = counter - 1
+                s = s - 1
+                e = e - 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(member, create_list(msg, 10, s, e), sc, footer))
+                await embedl.remove_reaction('⬅️', ctx.author)
+            else:
+                await embedl.remove_reaction('⬅️', ctx.author)
 
 def setup(bot):
     bot.add_cog(Moderation(bot))
