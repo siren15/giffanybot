@@ -847,7 +847,7 @@ class Moderation(commands.Cog):
         endtimes = await db.find(mutes, {'endtime':{'$lte':datetime.utcnow()}})
         for m in endtimes:
             try:
-                guild = await self.bot.get_guild(m.guildid)
+                guild = await self.bot.fetch_guild(m.guildid)
             except discord.NotFound:
                 print(f"[automod]|[unmute_task]{m.guildid} not found in the guild list")
                 entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
