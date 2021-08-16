@@ -877,7 +877,7 @@ class Moderation(commands.Cog):
                     return
 
                 embed = discord.Embed(description=f'{member.mention}|{member.id} **was unmuted** by **automod** | `Mute time expired`',
-                                      colour=0xF893B2
+                                      colour=0xF893B2,
                                       timestamp=datetime.utcnow())
                 embed.set_thumbnail(url=member.avatar_url)
                 await logchannel.send(embed=embed)
