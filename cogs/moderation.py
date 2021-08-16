@@ -868,21 +868,21 @@ class Moderation(commands.Cog):
 
             lchs = await db.find(logs, {'guild_id':guild.id})
             for lch in lchs:
-            try:
-                logchannel = guild.get_channel(lch.channel_id)
-            except discord.NotFound:
-                print(f"[automod]|[unmute_task]{lch.channel_id} not found in guild {guild}|{guild.id}")
+                try:
+                    logchannel = guild.get_channel(lch.channel_id)
+                except discord.NotFound:
+                    print(f"[automod]|[unmute_task]{lch.channel_id} not found in guild {guild}|{guild.id}")
+                    entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                    await db.delete(entry_to_delete)
+                    return
+
+                embed = discord.Embed(description=f'{member.mention}|{member.id} **was unmuted** by **automod** | `Mute time expired`',
+                                      colour=0xF893B2
+                                      timestamp=datetime.utcnow())
+                embed.set_thumbnail(url=member.avatar_url)
+                await logchannel.send(embed=embed)
                 entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
                 await db.delete(entry_to_delete)
-                return
-
-            embed = discord.Embed(description=f'{member.mention}|{member.id} **was unmuted** by **automod** | `Mute time expired`',
-                                  colour=0xF893B2
-                                  timestamp=datetime.utcnow())
-            embed.set_thumbnail(url=member.avatar_url)
-            await logchannel.send(embed=embed)
-            entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
-            await db.delete(entry_to_delete)
 
     @commands.command(aliases=['modlogs'])
     @commands.has_permissions(kick_members=True)
