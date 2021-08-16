@@ -864,7 +864,7 @@ class Moderation(commands.Cog):
 
             member = await guild.get_member(m.user)
             roles = [guild.get_role(int(id_)) for id_ in m.roles.split(",") if len(id_)]
-            await = member.edit(roles=roles)
+            await member.edit(roles=roles)
 
             lchs = await db.find(logs, {'guild_id':guild.id})
             for lch in lchs:
