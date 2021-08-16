@@ -14,6 +14,7 @@ import discord
 import asyncio
 from discord.ext import tasks, commands
 from discord.ext.commands import bot_has_permissions
+from discord.utils import get
 import time
 from stuf import stuf
 from dateutil.relativedelta import *
@@ -850,29 +851,28 @@ class Moderation(commands.Cog):
                 guild = await self.bot.fetch_guild(m.guildid)
             except discord.NotFound:
                 print(f"[automod]|[unmute_task]{m.guildid} not found in the guild list")
-                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                entry_to_delete = await db.find_one(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
                 await db.delete(entry_to_delete)
                 return
 
             try:
-                member = await guild.get_member(m.user)
+                member = await guild.fetch_member(m.user)
             except discord.NotFound:
                 print(f"[automod]|[unmute_task]{m.user} not found in guild {guild}|{guild.id}")
-                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                entry_to_delete = await db.find_one(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
                 await db.delete(entry_to_delete)
                 return
 
-            member = await guild.get_member(m.user)
             roles = [guild.get_role(int(id_)) for id_ in m.roles.split(",") if len(id_)]
             await member.edit(roles=roles)
 
             lchs = await db.find(logs, {'guild_id':guild.id})
             for lch in lchs:
                 try:
-                    logchannel = guild.get_channel(lch.channel_id)
+                    logchannel = await self.bot.fetch_channel(lch.channel_id)
                 except discord.NotFound:
                     print(f"[automod]|[unmute_task]{lch.channel_id} not found in guild {guild}|{guild.id}")
-                    entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                    entry_to_delete = await db.find_one(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
                     await db.delete(entry_to_delete)
                     return
 
@@ -881,7 +881,7 @@ class Moderation(commands.Cog):
                                       timestamp=datetime.utcnow())
                 embed.set_thumbnail(url=member.avatar_url)
                 await logchannel.send(embed=embed)
-                entry_to_delete = await db.find(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
+                entry_to_delete = await db.find_one(mutes, {'guildid':m.guildid, 'user':m.user, 'endtime':m.endtime})
                 await db.delete(entry_to_delete)
 
     @commands.command(aliases=['modlogs'])
