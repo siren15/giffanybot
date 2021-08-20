@@ -1,15 +1,9 @@
-import discord
-from discord import Embed, Member, NotFound, Object
-from discord.ext.commands import Greedy, Converter, BadArgument
+from discord import Embed
 from discord.ext import commands
 from customchecks import *
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
-from typing import Optional
-from odmantic import Field, Model
 import re
+from discord.ext.commands import CommandNotFound
 
 
 class OnError(commands.Cog):
@@ -77,6 +71,12 @@ class OnError(commands.Cog):
             embed = Embed(description=f":x: {ctx.author.mention} You are blacklisted from using some commands",
                           color=0xDD2222)
             await ctx.send(embed=embed)
+        
+        if isinstance(error, CommandNotFound):
+            if is_event_active(ctx.guild, 'command_not_found'):
+                embed = Embed(description=f":x: Command not found.",
+                            color=0xDD2222)
+                await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(OnError(bot))

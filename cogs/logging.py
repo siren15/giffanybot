@@ -1,19 +1,10 @@
 import discord
-import os
 import re
-import requests
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
-from typing import Optional
-from odmantic import Field, Model
-from datetime import datetime, timedelta
+from datetime import datetime
 from discord import Embed
 from discord.ext import commands
-from discord.utils import get
 from customchecks import *
-from motor.motor_asyncio import AsyncIOMotorClient
 
 class Logging(commands.Cog):
     """Guild logging module"""
@@ -36,12 +27,12 @@ class Logging(commands.Cog):
         id = channelid.channel_id
         logchannel = ctx.guild.get_channel(id)
         if logchannel == None:
-            table.insert_one({"guild_id":ctx.guild.id, "channel_id":channel.id})
+            db.save({"guild_id":ctx.guild.id, "channel_id":channel.id})
             embed = discord.Embed(description=f"I have assigned {channel.mention} as a log channel.",
                                   color=0xF893B2)
             await ctx.send(embed=embed)
         else:
-            table.update_one({"guild_id":ctx.guild.id}, {"$set":{"channel_id":channel.id}})
+            db.save({"guild_id":ctx.guild.id}, {"$set":{"channel_id":channel.id}})
             embed = discord.Embed(description=f"I have updated {channel.mention} as a log channel.",
                                   color=0xF893B2)
             await ctx.send(embed=embed)
@@ -231,12 +222,12 @@ class Logging(commands.Cog):
     async def on_member_ban(self, guild, user):
         if iscogactive(guild, 'logging') == True:
             if is_event_active(guild, 'member_ban'):
-                async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
+                async for entry in user.guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
                     if entry.target.id == user.id:
                         db = await odm.connect()
                         channelid = await db.find_one(logs, {"guild_id":guild.id})
                         id = channelid.channel_id
-                        log_channel = member.guild.get_channel(id)
+                        log_channel = user.guild.get_channel(id)
 
                         embed = discord.Embed(description='{0.user.mention}({0.user}|{0.user.id}) banned {0.target.mention}|{0.target} | `{0.reason}`'.format(entry),
                                               timestamp=datetime.utcnow(),
@@ -249,12 +240,12 @@ class Logging(commands.Cog):
     async def on_member_unban(self, guild, user):
         if iscogactive(guild, 'logging') == True:
             if is_event_active(guild, 'member_unban'):
-                async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.unban):
+                async for entry in user.guild.audit_logs(limit=1, action=discord.AuditLogAction.unban):
                     if entry.target.id == user.id:
                         db = await odm.connect()
                         channelid = await db.find_one(logs, {"guild_id":guild.id})
                         id = channelid.channel_id
-                        log_channel = member.guild.get_channel(id)
+                        log_channel = user.guild.get_channel(id)
 
                         embed = discord.Embed(description='{0.user.mention}({0.user}|{0.user.id}) unbanned {0.target.mention}|{0.target} | `{0.reason}`'.format(entry),
                                               timestamp=datetime.utcnow(),

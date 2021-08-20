@@ -1,13 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
-from typing import Optional
-from odmantic import Field, Model
-from discord import Embed, Member, NotFound, Object
-from discord.ext.commands import Greedy, Converter, BadArgument
+from discord import Embed, Member
+from discord.ext.commands import Greedy
 from discord.utils import find
 from random import choice
 import discord
@@ -16,14 +11,9 @@ from discord.ext import tasks, commands
 from discord.ext.commands import bot_has_permissions
 from discord.utils import get
 import time
-from stuf import stuf
 from dateutil.relativedelta import *
 from customchecks import *
 import random
-import string
-import re
-from discord_slash import *
-test_guilds = ['435038183231848449', '149167686159564800']
 
 def random_string_generator():
     characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'
@@ -1046,7 +1036,7 @@ class Moderation(commands.Cog):
             embed.set_footer(text=f'Member ID: {member.id}')
             await ctx.send(embed=embed)
 
-    @commands.command(aliases=['delwarn'])
+    @commands.command(aliases=['delwarn', 'warndelete'])
     @commands.has_permissions(kick_members=True)
     @has_active_cogs("moderation")
     async def warnremove(self, ctx, strikeid=None, *, reason='No reason provided'):
