@@ -117,3 +117,10 @@ def is_user_blacklisted():
                 raise UserInBlacklist(f'{ctx.author} has been blacklisted from using commands')
         return True
     return commands.check(predicate)
+
+async def is_user_blacklisted_e(message):
+    db = odm.connect()
+    users = await db.find_one(userfilter, {"guild":message.guild.id, "user":message.author.id})
+    if users.user == message.author.id:
+        raise UserInBlacklist(f'{message.author} has been blacklisted from using events')
+    return True

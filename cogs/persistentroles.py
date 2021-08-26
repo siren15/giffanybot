@@ -28,10 +28,13 @@ class persistentroles(commands.Cog):
             if rolecount == 0:
                 return
             else:
-                cluster = Mongo.connect()
-                db = cluster["giffany"]
+                db = await odm.connect()
+                check = await db.find_one(persistentroles, {"guildid":member.guild.id, "userid":member.id})
+                if check == None:
+                    db.delete(check)
+                
                 member_roles = ",".join([str(role.id) for role in member.roles if role.name != '@everyone'])
-                db.insert_one(persistentroles, {"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
+                await db.save(persistentroles, {"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
         else:
             return
 

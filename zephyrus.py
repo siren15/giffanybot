@@ -1,22 +1,13 @@
 #Zephyrus(.GIFfany-testing-grounds)
 #Author: @slowmachine#9665
 ################################
-import asyncio
 from datetime import datetime
 import discord
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
-from typing import Optional
-from odmantic import Field, Model
 import os
 import re
 from discord import Embed
 from discord.ext import commands
-from discord.ext.commands import CommandNotFound
-from stuf import stuf
-from discord_slash import *
 
 ###################################
 intents = discord.Intents.default()
@@ -25,16 +16,15 @@ messages = joined = 0
 ###################################
 token = os.environ["zep_token"]
 
+
 async def get_prefix(client, message):
     db = await odm.connect()
     prefix = await db.find_one(prefixes, {"guildid":message.guild.id})
     return prefix.prefix
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents)
-bot.remove_command('help')
+#bot.remove_command('help')
 
-slash = SlashCommand(bot, sync_commands=True)
-test_guilds = ['435038183231848449', '149167686159564800']
 
 
 @bot.event
@@ -42,13 +32,6 @@ async def on_ready():
     print("Zephyrus successfully connected to Discord.")
     print("author:slowmachine#9665")
     await bot.change_presence(activity=discord.Game(name="use z.help for commands"))
-
-#@bot.event
-#async def on_command_error(ctx, error):
-#    if isinstance(error, CommandNotFound):
-#        embed = Embed(description=f":x: Command not found.",
-#                      color=0xDD2222)
-#        await ctx.send(embed=embed)
 
 @bot.event
 async def on_guild_join(guild):
@@ -109,7 +92,7 @@ async def enable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
+    events = ['command_not_found', 'welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']
@@ -264,7 +247,7 @@ async def disable(ctx, comd=None, *, name=None):
         commands = commands + f"{c},"
     commands = commands.split(',')
 
-    events = ['welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
+    events = ['command_not_found','welcome_message', 'welcome_card', 'leave_message', 'message_deleted', 'message_edited', 'member_join', 'member_leave', 'member_ban', 'member_kick', 'member_unban', 'member_roles_update']
 
     evnts = ['listener', 'event', 'listeners', 'events']
     cmds = ['command', 'commands', 'cmd', 'cmds']
@@ -373,7 +356,7 @@ async def disable(ctx, comd=None, *, name=None):
             cluster = Mongo.connect()
             db = cluster["giffany"]
             table = db['prefixes']
-            commands = table.find({"guildid":ctx.guild.id})
+            cogs = table.find({"guildid":ctx.guild.id})
             activecogs= ''
             for c in cogs:
                 activecogs = activecogs + f"0, {c['activecogs'].lower()}"

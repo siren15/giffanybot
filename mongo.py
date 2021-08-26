@@ -11,6 +11,7 @@ import os
 mongodb_url = os.environ["mongodb_url"]
 
 
+
 class Mongo(object):
     @staticmethod
     def connect():
@@ -40,7 +41,7 @@ class colourme(Model):
 	roleid: Optional[int64] = None
 
 class giveaways(Model):
-	giveawaynum: Optional[int64] = None
+	giveawaynum: Optional[str] = None
 	guildid: Optional[int64] = None
 	authorid: Optional[int64] = None
 	endtime: Optional[datetime] = None
@@ -50,6 +51,7 @@ class giveaways(Model):
 	winnersnum:	Optional[str] = None
 	prize: Optional[str] = None
 	starttime: Optional[datetime] = None
+	status: Optional[str] = None
 
 class giveme(Model):
 	guildid: Optional[int64] = None

@@ -14,7 +14,6 @@ from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Greedy, CheckFailure
 from discord.utils import get
-from stuf import stuf
 from customchecks import *
 
 

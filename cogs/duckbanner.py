@@ -4,12 +4,8 @@ from datetime import datetime, timedelta
 from discord import Embed
 from discord.ext import commands
 from discord.utils import get
-from stuf import stuf
 from customchecks import *
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
 from typing import Optional
 from odmantic import Field, Model
 

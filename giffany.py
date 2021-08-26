@@ -15,7 +15,6 @@ import os
 from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
-from stuf import stuf
 
 ###################################
 intents = discord.Intents.default()

@@ -11,7 +11,6 @@ from customchecks import *
 from discord import Embed
 from discord.ext import commands
 from discord.utils import get
-from stuf import stuf
 
 class Limbo(commands.Cog):
     """Limbo module"""
