@@ -9,10 +9,8 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-try:
-	mongodb_url = os.environ["mongodb_url"]
-except KeyError:
-	mongodb_url = os.getenv["mongodb_url"]
+mongodb_url = os.environ["mongodb_url"]
+
 
 
 
