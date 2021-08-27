@@ -8,14 +8,17 @@ import os
 import re
 from discord import Embed
 from discord.ext import commands
+from dotenv import load_dotenv
 
 ###################################
 intents = discord.Intents.default()
 intents.members = True
 messages = joined = 0
 ###################################
-token = os.environ["zep_token"]
-
+try:
+    token = os.environ["zep_token"]
+except KeyError:
+    token = os.getenv("zep_token")
 
 async def get_prefix(client, message):
     db = await odm.connect()
