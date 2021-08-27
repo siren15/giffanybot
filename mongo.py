@@ -7,7 +7,6 @@ from typing import Optional
 from odmantic import Field, Model
 from datetime import datetime
 import os
-from dotenv import load_dotenv
 
 mongodb_url = os.environ["mongodb_url"]
 
