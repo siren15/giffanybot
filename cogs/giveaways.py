@@ -592,7 +592,7 @@ class Giveaways(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def reroll(self, ctx, giveaway_channel:discord.Channel, gmd, req, winnersnum, authorid, *, prize):
+    async def reroll(self, ctx, giveaway_channel:discord.TextChannel, gmd, req, winnersnum, authorid, *, prize):
         
         giveaway_message = await giveaway_channel.fetch_message(int(gmd))
         
