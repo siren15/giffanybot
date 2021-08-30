@@ -592,77 +592,45 @@ class Giveaways(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def reroll(self, ctx, gid=None):
-        if gid == None:
-            embed = Embed(description=f":x: Please enter giveaway message id",
-                          color=0xDD2222)
-            await ctx.send(embed=embed)
-        db = await odm.connect()
-        ge = await db.find(giveaways, giveaways.giveawaymessageid==gid)
-        for ge in ge:
-            print(ge)
-            if (ge.giveawaymessageid == gid) and (ge.guildid == ctx.guild.id):
-                giveaway_channel = await ctx.guild.get_channel(int(ge.giveawaychannelid))
-                giveaway_message = await giveaway_channel.fetch_message(int(ge.giveawaymessageid))
-                req = ge.reqrid
-                winnersnum = ge.winnersnum
-                guild=ctx.guild
-            
-            for reaction in giveaway_message.reactions:
-                if reaction.emoji == '🎉':
-                    users = await reaction.users().flatten()
-                    users = [u.id for u in users if not u.bot]
-                    member_pool_all = [member for member in guild.members if member.id in users]
-                    author = [member for member in guild.members if member.id == ge.authorid]
-                    for author in author:
-                        author = author.mention
-                    if req is None:
-                        member_pool = [member.id for member in guild.members if member.id in users]
-                        try:
-                            winners = choices(member_pool, k=int(winnersnum))
-                        except IndexError:
-                            embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {ge.prize}",
-                                        description=f"Not enough participants. \nHosted by: {author}",
-                                        colour=0xF893B2)
-                            embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
-                            await giveaway_message.edit(embed=embed)
-                            return
-
-                        winner = [member.mention for member in guild.members if member.id in winners]
-                        for win in winner:
-                            win = win
-                        embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {ge.prize}",
-                                    description=f"Winner: {winner}\nHosted by: {author}",
+    async def reroll(self, ctx, giveaway_channel:discord.Channel, gmd, req, winnersnum, authorid, *, prize):
+        
+        giveaway_message = await giveaway_channel.fetch_message(int(gmd))
+        
+        
+        guild=ctx.guild
+        
+        for reaction in giveaway_message.reactions:
+            if reaction.emoji == '🎉':
+                users = await reaction.users().flatten()
+                users = [u.id for u in users if not u.bot]
+                member_pool_all = [member for member in guild.members if member.id in users]
+                author = [member for member in guild.members if member.id == authorid]
+                for author in author:
+                    author = author.mention
+                
+                    rrq = guild.get_role(int(req))
+                    member_pool = [member.id for member in member_pool_all if rrq in member.roles]
+                    try:
+                        winners = choices(member_pool, k=int(winnersnum))
+                    except IndexError:
+                        embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                    description=f"Not enough participants. \nHosted by: {author}",
                                     colour=0xF893B2)
                         embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
                         await giveaway_message.edit(embed=embed)
-                        await giveaway_message.channel.send(f"🎉Congrats {win}!!🎉 You won **{ge.prize}**!")
                         return
-                            
-                    else:
-                        rrq = guild.get_role(int(req))
-                        member_pool = [member.id for member in member_pool_all if rrq in member.roles]
-                        try:
-                            winners = choices(member_pool, k=int(winnersnum))
-                        except IndexError:
-                            embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {ge.prize}",
-                                        description=f"Not enough participants. \nHosted by: {author}",
-                                        colour=0xF893B2)
-                            embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
-                            await giveaway_message.edit(embed=embed)
-                            return
 
-                        winner = [member.mention for member in guild.members if member.id in winners]
-                        for win in winner:
-                            win = win
+                    winner = [member.mention for member in guild.members if member.id in winners]
+                    for win in winner:
+                        win = win
 
-                        embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {ge.prize}",
-                                    description=f"Winner(s): {winner}\nHosted by: {author}",
-                                    colour=0xF893B2)
-                        embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
-                        await giveaway_message.edit(embed=embed)
-                        await giveaway_message.channel.send(f"🎉Congrats {win}!!🎉 You won **{ge.prize}**!")
-                        return
+                    embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                description=f"Winner(s): {winner}\nHosted by: {author}",
+                                colour=0xF893B2)
+                    embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
+                    await giveaway_message.edit(embed=embed)
+                    await giveaway_message.channel.send(f"🎉Congrats {win}!!🎉 You won **{prize}**!")
+                    return
             
 
 
