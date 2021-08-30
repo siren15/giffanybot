@@ -601,11 +601,6 @@ class Giveaways(commands.Cog):
         ge = await db.find(giveaways, giveaways.giveawaymessageid==gid)
         for ge in ge:
             print(ge)
-            if ge == None:
-                embed = Embed(description=f":x: Giveaway `{gid}` not found",
-                                color=0xDD2222)
-                await ctx.send(embed=embed)
-                return
             if (ge.giveawaymessageid == gid) and (ge.guildid == ctx.guild.id):
                 giveaway_channel = await ctx.guild.get_channel(int(ge.giveawaychannelid))
                 giveaway_message = await giveaway_channel.fetch_message(int(ge.giveawaymessageid))
