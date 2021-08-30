@@ -598,18 +598,20 @@ class Giveaways(commands.Cog):
                           color=0xDD2222)
             await ctx.send(embed=embed)
         db = await odm.connect()
-        ge = await db.find_one(giveaways, {"guildid":ctx.guild.id, "giveawaymessageid":gid, "status":"Ended"})
+        ge = await db.find_one(giveaways, giveaways.giveawaymessageid==gid)
         print(ge)
+        if ge == None:
+            embed = Embed(description=f":x: Giveaway `{gid}` not found",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+            return
         if (ge.giveawaymessageid == gid) and (ge.guildid == ctx.guild.id):
             giveaway_channel = await ctx.guild.get_channel(int(ge.giveawaychannelid))
             giveaway_message = await giveaway_channel.fetch_message(int(ge.giveawaymessageid))
             req = ge.reqrid
             winnersnum = ge.winnersnum
             guild=ctx.guild
-        elif ge == None:
-            embed = Embed(description=f":x: Giveaway `{gid}` not found",
-                          color=0xDD2222)
-            await ctx.send(embed=embed)
+        
         for reaction in giveaway_message.reactions:
             if reaction.emoji == '🎉':
                 users = await reaction.users().flatten()
