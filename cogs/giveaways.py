@@ -503,16 +503,194 @@ class Giveaways(commands.Cog):
 
         table.insert_one({"giveawaynum":gid, "guildid":ctx.guild.id, "authorid":ctx.author.id, "endtime":endtime, "giveawaychannelid":m.channel.id, "giveawaymessageid":m.id, "winnersnum":winnersnum, "prize":prize, "status":"Active"})
 
+    @commands.command(aliases=['glist', 'giveawayslist', 'giveawaylist'])
+    @commands.has_permissions(administrator=True)
+    async def giveaways(self, ctx):
+        def chunks(l, n):
+            n = max(1, n)
+            return (l[i:i+n] for i in range(0, len(l), n))
+
+        def create_list(lst, n, s, e):
+            lst = list(chunks(lst, n))
+            for i in lst[s:e]:
+                lst = i
+            fl = ''
+            for n in lst:
+                fl = fl + n
+            return fl
+
+        def newpage(guild, active, ended, sc, pages):
+            embed = Embed(title=f"__Giveaways for {guild}__ [{sc} found]",
+                          colour=0xF893B2)
+            embed.add_field(name="Active:", value=active)
+            embed.add_field(name="Ended:", value=ended)
+            embed.set_footer(text=pages)
+            return embed
+
+        def field(fld):
+            field = ''
+            for i in fld:
+                field = field + f"\n{i},"
+
+            return f
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['⬅️', '➡️']
+
+        db = odm.connect()
+        table = giveaways
+
+        active = await db.find(table, {"guildid":ctx.guild.id, "status":"Active"})
+        active = [str(name['name'])+"\n" for name in names]
+
+        ended = await db.find(table, {"guildid":ctx.guild.id, "status":"Ended"})
+        ended = [str(name['rolename'])+"\n" for name in roles]
+
+        if names == []:
+            embed = Embed(description=f"There are no giveyous for {ctx.guild}.",
+                          colour=0xF893B2)
+            await ctx.send(embed=embed)
+            return
+
+        s = 0
+        e = 1
+        counter = 1
+        nc = list(chunks(names, 10))
+
+        footer = f"Page:{counter}|{len(nc)}"
+        embedl = await ctx.send(embed=newpage(create_list(names, 10, s, e), create_list(roles, 10, s, e), ctx.guild, footer))
+        await embedl.add_reaction('⬅️')
+        await embedl.add_reaction('➡️')
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+
+            except asyncio.TimeoutError:
+                await embedl.clear_reactions()
+                break
+
+            if (reaction.emoji == '➡️') and (counter < len(nc)):
+                counter = counter + 1
+                s = s + 1
+                e = e + 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(create_list(names, 10, s, e), create_list(roles, 10, s, e), ctx.guild, footer))
+                await embedl.remove_reaction('➡️', ctx.author)
+            else:
+                await embedl.remove_reaction('➡️', ctx.author)
+
+            if (reaction.emoji == '⬅️') and (counter > 1):
+                counter = counter - 1
+                s = s - 1
+                e = e - 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(create_list(names, 10, s, e), create_list(roles, 10, s, e), ctx.guild, footer))
+                await embedl.remove_reaction('⬅️', ctx.author)
+            else:
+                await embedl.remove_reaction('⬅️', ctx.author)
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def reroll(self, ctx, gid=None):
+        if gid == None:
+            embed = Embed(description=f":x: Please enter giveaway message id",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+        db = await odm.connect()
+        ge = await db.find_one(table, {"guildid":ctx.guild.id, "giveawaymessageid":gid, "status":"Ended", "endtime":{'$lte':datetime.utcnow()}})
+        if (ge.giveawaymessageid == gid) and (ge.guildid == ctx.guild.id):
+            giveaway_channel = await ctx.guild.get_channel(int(ge.giveawaychannelid))
+            giveaway_message = await giveaway_channel.fetch_message(int(ge.giveawaymessageid))
+            guild=ctx.guild
+        elif ((ge.giveawaynum == None) and (ge.guildid == ctx.guild.id)) or ((ge.giveawaymessageid == None) and (ge.guildid == ctx.guild.id)):
+            embed = Embed(description=f":x: Giveaway `{gid}` not found",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+        for reaction in giveaway_message.reactions:
+            if reaction.emoji == '🎉':
+                users = await reaction.users().flatten()
+                users = [u.id for u in users if not u.bot]
+                member_pool_all = [member for member in guild.members if member.id in users]
+                author = [member for member in guild.members if member.id == authorid]
+                for author in author:
+                    author = author.mention
+                if req is None:
+                    member_pool = [member.id for member in guild.members if member.id in users]
+                    try:
+                        winners = choices(member_pool, k=int(winnersnum))
+                    except IndexError:
+                        embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                    description=f"Not enough participants. \nHosted by: {author}",
+                                    colour=0xF893B2)
+                        embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
+                        await giveaway_message.edit(embed=embed)
+                        giveaway_entry = await db.find(table, {"status":"Active", "endtime":e.endtime, "guildid":guild.id, "prize":prize, "giveawaynum":gid})
+                        for ge in giveaway_entry:
+                            if (ge.guildid == guild.id) and (ge.giveawaynum == gid):
+                                if ge.status == "Active":
+                                    ge.status = "Ended"
+                                    await db.save(ge)
+                        return
+
+                    winner = [member.mention for member in guild.members if member.id in winners]
+                    for win in winner:
+                        win = win
+                    embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                description=f"Winner: {winner}\nHosted by: {author}",
+                                colour=0xF893B2)
+                    embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
+                    await giveaway_message.edit(embed=embed)
+                    await giveaway_message.channel.send(f"🎉Congrats {win}!!🎉 You won **{prize}**!")
+                    giveaway_entry = await db.find(table, {"status":"Active","endtime":e.endtime, "guildid":guild.id, "prize":prize, "giveawaynum":gid})
+                    for ge in giveaway_entry:
+                        if (ge.guildid == guild.id) and (ge.giveawaynum == gid):
+                            if ge.status == "Active":
+                                ge.status = "Ended"
+                                await db.save(ge)
+                    return
+                        
+                else:
+                    rrq = guild.get_role(int(req))
+                    member_pool = [member.id for member in member_pool_all if rrq in member.roles]
+                    try:
+                        winners = choices(member_pool, k=int(winnersnum))
+                    except IndexError:
+                        embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                    description=f"Not enough participants. \nHosted by: {author}",
+                                    colour=0xF893B2)
+                        embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
+                        await giveaway_message.edit(embed=embed)
+                        giveaway_entry = await db.find(table, {"status":"Active", "endtime":e.endtime, "guildid":guild.id, "prize":prize, "giveawaynum":gid})
+                        for ge in giveaway_entry:
+                            if (ge.guildid == guild.id) and (ge.giveawaynum == gid):
+                                if ge.status == "Active":
+                                    ge.status = "Ended"
+                                    await db.save(ge)
+                        return
+
+                    winner = [member.mention for member in guild.members if member.id in winners]
+                    for win in winner:
+                        win = win
+
+                    embed = Embed(title=f"🎉Giveaway ended[reroll]!🎉 \nFor: {prize}",
+                                description=f"Winner(s): {winner}\nHosted by: {author}",
+                                colour=0xF893B2)
+                    embed.set_footer(text=f"Ended at: {datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}")
+                    await giveaway_message.edit(embed=embed)
+                    await giveaway_message.channel.send(f"🎉Congrats {win}!!🎉 You won **{prize}**!")
+                    giveaway_entry = await db.find(table, {"status":"Active", "endtime":e.endtime, "guildid":guild.id, "prize":prize, "giveawaynum":gid})
+                    for ge in giveaway_entry:
+                        if (ge.guildid == guild.id) and (ge.giveawaynum == gid):
+                            if ge.status == "Active":
+                                ge.status = "Ended"
+                                await db.save(ge)
+                    return
+            
+
+
     @tasks.loop(minutes=1)
     async def giveaway_count_task(self):
-        async def endsin(sec):
-           sec = sec % (24 * 3600)
-           hour = sec // 3600
-           sec %= 3600
-           min = sec // 60
-           sec %= 60
-           return "%02d:%02d:%02d" % (hour, min, sec)
-
         async def guild_id(endtime):
             db = await odm.connect()
             results = await db.find(giveaways, {"status":"Active", "endtime":endtime})
