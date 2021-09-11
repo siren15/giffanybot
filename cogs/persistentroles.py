@@ -1,9 +1,4 @@
-import pymongo
-from pymongo import MongoClient
 from mongo import *
-from odmantic import AIOEngine
-from typing import Optional
-from odmantic import Field, Model
 import discord
 import re
 from discord.ext import commands
@@ -32,7 +27,7 @@ class persistentroles(commands.Cog):
                 check = await db.find_one(persistentroles, {"guildid":member.guild.id, "userid":member.id})
                 if check == None:
                     db.delete(check)
-                
+
                 member_roles = ",".join([str(role.id) for role in member.roles if role.name != '@everyone'])
                 await db.save(persistentroles, {"guildid":member.guild.id, "userid":member.id, "roles":member_roles})
         else:
@@ -40,16 +35,19 @@ class persistentroles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        db = await odm.connect()
-        users = await db.find_one(persistentroles, {"guildid":member.guild.id, "userid":member.id})
-        if member.id == users.userid:
-            r = await db.find_one(persistentroles, {"guildid":member.guild.id, "userid":member.id})
-            roles = [r.roles.split(',')]
-            for roles in roles:
-                roles = [member.guild.get_role(int(id_)) for id_ in roles if len(id_)]
-                roles = roles + member.roles
-                await member.edit(roles=roles)
-                await db.delete(r)
+        cluster = Mongo.connect()
+        db = cluster["giffany"]
+        table = db['persistentroles']
+        users = table.find({"guildid":member.guild.id, "userid":member.id})
+        for user in users:
+            if member.id == user['userid']:
+                roles = table.find({"guildid":member.guild.id, "userid":member.id})
+                roles = [r['roles'].split(',') for r in roles]
+                for roles in roles:
+                    roles = [member.guild.get_role(int(id_)) for id_ in roles if len(id_)]
+                    roles = roles + member.roles
+                    await member.edit(roles=roles)
+                    table.delete_one({"guildid":member.guild.id, "userid":member.id})
 
 def setup(bot):
     bot.add_cog(persistentroles(bot))
