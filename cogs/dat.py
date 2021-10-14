@@ -126,7 +126,7 @@ class dat(commands.Cog):
             else:
                 if ctx.message.attachments==True:
                     for url in ctx.message.attachments:
-                        check.resubmitted = True:
+                        check.resubmitted = True
                         db.save(check)
                         embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
                                       colour=0xF893B2)
