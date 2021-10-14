@@ -1,4 +1,5 @@
 import discord
+from mongo import *
 from discord import Embed
 from discord.ext import commands
 from customchecks import *
@@ -14,31 +15,13 @@ class dat(commands.Cog):
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['dat']
-        prompt_list = ['01. wandering',
-                       '02. trail',
-                       '03. fall',
-                       '04. deep',
-                       '05. crooked',
-                       '06. screech',
-                       '07. a closet ',
-                       '08. "at the foot of a hill"',
-                       '08. at the foot of a hill',
-                       '09. sin',
-                       '10. odor',
-                       '11. scar',
-                       '12. shattered',
-                       '13. run',
-                       '14. florescent',
-                       '15. playground',
-                       'Bonus: halloween',
-                       'wandering',
+        prompt_list = ['wandering',
                        'trail',
                        'fall',
                        'deep',
                        'crooked',
                        'screech',
                        'a closet ',
-                       '"at the foot of a hill"',
                        'at the foot of a hill',
                        'sin',
                        'odor',
@@ -47,49 +30,7 @@ class dat(commands.Cog):
                        'run',
                        'florescent',
                        'playground',
-                       'halloween',
-                       '01 wandering',
-                       '02 trail',
-                       '03 fall',
-                       '04 deep',
-                       '05 crooked',
-                       '06 screech',
-                       '07 a closet ',
-                       '08 "at the foot of a hill"',
-                       '08 at the foot of a hill',
-                       '09 sin',
-                       '10 odor',
-                       '11 scar',
-                       '12 shattered',
-                       '13 run',
-                       '14 florescent',
-                       '15 playground',
-                       'Bonus halloween',
-                       '1 wandering',
-                       '2 trail',
-                       '3 fall',
-                       '4 deep',
-                       '5 crooked',
-                       '6 screech',
-                       '7 a closet ',
-                       '8 "at the foot of a hill"',
-                       '8 at the foot of a hill',
-                       '9 sin',
-                       '10 odor',
-                       '11 scar',
-                       '12 shattered',
-                       '13 run',
-                       '14 florescent',
-                       '15 playground',
-                        '1. wandering',
-                        '2. trail',
-                        '3. fall',
-                        '4. deep',
-                        '5. crooked',
-                        '6. screech',
-                        '7. a closet ',
-                        '8. "at the foot of a hill"',
-                        '8. at the foot of a hill']
+                       'halloween']
         if prompt == None:
             embed = Embed(
                 description=f":x: {ctx.author.mention} Please provide a prompt you're submitting for",
@@ -120,7 +61,7 @@ class dat(commands.Cog):
 
         if ctx.message.attachments==True:
             for url in ctx.message.attachments:
-                table.insert_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, "content":url.url})
+                table.insert_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, "content":url.url, 'resubmitted':False})
                 embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
                               colour=0xF893B2)
                 await ctx.send(embed=embed)
@@ -133,6 +74,72 @@ class dat(commands.Cog):
             await ctx.send(embed=embed)
             await ctx.message.delete()
             return
+
+    @commands.command()
+    async def resubmit(self, ctx):
+        db = await odm.connect()
+        table = 'dat'
+
+        prompt_list = ['wandering',
+                       'trail',
+                       'fall',
+                       'deep',
+                       'crooked',
+                       'screech',
+                       'a closet ',
+                       'at the foot of a hill',
+                       'sin',
+                       'odor',
+                       'scar',
+                       'shattered',
+                       'run',
+                       'florescent',
+                       'playground',
+                       'halloween']
+
+        if prompt == None:
+            embed = Embed(
+                description=f":x: {ctx.author.mention} Please provide a prompt you're resubmitting for",
+                color=0xDD2222)
+            await ctx.send(embed=embed)
+            await ctx.message.delete()
+            return
+
+        elif prompt.lower() not in prompt_list:
+            embed = Embed(
+                description=f":x: {ctx.author.mention} Please provide a correct prompt from our prompt list",
+                color=0xDD2222)
+            await ctx.send(embed=embed)
+            await ctx.message.delete()
+            return
+
+        elif prompt.lower() != None:
+            regx = re.compile(f"^{prompt}$", re.IGNORECASE)
+            check = await db.find_one(table, {"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
+            if check.resubmitted == True:
+                embed = Embed(
+                    description=f":x: {ctx.author.mention} You already resubmitted for this prompt already, you can resubmit only once.",
+                    color=0xDD2222)
+                await ctx.send(embed=embed)
+                await ctx.message.delete()
+                return
+            else:
+                if ctx.message.attachments==True:
+                    for url in ctx.message.attachments:
+                        check.resubmitted = True:
+                        db.save(check)
+                        embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
+                                      colour=0xF893B2)
+                        await ctx.send(embed=embed)
+                        return
+                else:
+                    embed = Embed(
+                        description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
+                        color=0xDD2222)
+                    embed.set_image(url='https://i.imgur.com/tqW93GO.png')
+                    await ctx.send(embed=embed)
+                    await ctx.message.delete()
+                    return
 
     @commands.command()
     @commands.has_any_role('Mods')
