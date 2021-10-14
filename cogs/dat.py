@@ -1,6 +1,7 @@
 import discord
 from discord import Embed
 from discord.ext import commands
+from customchecks import *
 
 class dat(commands.Cog):
     """draw-a-thon submittion system"""
