@@ -47,39 +47,40 @@ class dat(commands.Cog):
             await ctx.message.delete()
             return
 
-        elif prompt.lower() != None:
+        elif prompt != None:
             regx = re.compile(f"^{prompt}$", re.IGNORECASE)
             check = table.find({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
-            ch = [n['prompt'] for n in check]
-            if ch != []:
-                embed = Embed(
-                    description=f":x: {ctx.author.mention} You already submitted for this prompt already, if you want to resubmit you can one time for each prompt using .resubmit 'prompt name' with uploading the correct drawing in one message",
-                    color=0xDD2222)
-                await ctx.send(embed=embed)
-                await ctx.message.delete()
-                return
-
-        if ctx.message.attachments==True:
-            for url in ctx.message.attachments:
-                table.insert_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, "content":url.url, 'resubmitted':False})
-                embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
-                              colour=0xF893B2)
-                await ctx.send(embed=embed)
-                return
-        else:
-            embed = Embed(
-                description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
-                color=0xDD2222)
-            embed.set_image(url='https://i.imgur.com/tqW93GO.png')
-            await ctx.send(embed=embed)
-            await ctx.message.delete()
-            return
+            ch = [n['prompts'] for n in check]
+            for n in check:
+                if n['prompts'] == prompt.lower():
+                    embed = Embed(
+                        description=f":x: {ctx.author.mention} You already submitted for this prompt already, if you want to resubmit you can one time for each prompt using .resubmit 'prompt name' with uploading the correct drawing in one message",
+                        color=0xDD2222)
+                    await ctx.send(embed=embed)
+                    await ctx.message.delete()
+                    return
+            if ch == []:
+                if ctx.message.attachments:
+                    for url in ctx.message.attachments:
+                        table.insert_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, "content":url.url, 'resubmitted':False})
+                        embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
+                                      colour=0xF893B2)
+                        await ctx.send(embed=embed)
+                        return
+                else:
+                    embed = Embed(
+                        description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
+                        color=0xDD2222)
+                    embed.set_image(url='https://i.imgur.com/tqW93GO.png')
+                    await ctx.send(embed=embed)
+                    await ctx.message.delete()
+                    return
 
     @commands.command()
-    async def resubmit(self, ctx):
-        db = await odm.connect()
-        table = 'dat'
-
+    async def resubmit(self, ctx, *, prompt=None):
+        cluster = Mongo.connect()
+        db = cluster["giffany"]
+        table = db['dat']
         prompt_list = ['wandering',
                        'trail',
                        'fall',
@@ -96,10 +97,9 @@ class dat(commands.Cog):
                        'florescent',
                        'playground',
                        'halloween']
-
         if prompt == None:
             embed = Embed(
-                description=f":x: {ctx.author.mention} Please provide a prompt you're resubmitting for",
+                description=f":x: {ctx.author.mention} Please provide a prompt you're submitting for",
                 color=0xDD2222)
             await ctx.send(embed=embed)
             await ctx.message.delete()
@@ -113,33 +113,32 @@ class dat(commands.Cog):
             await ctx.message.delete()
             return
 
-        elif prompt.lower() != None:
+        elif prompt != None:
             regx = re.compile(f"^{prompt}$", re.IGNORECASE)
-            check = await db.find_one(table, {"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
-            if check.resubmitted == True:
-                embed = Embed(
-                    description=f":x: {ctx.author.mention} You already resubmitted for this prompt already, you can resubmit only once.",
-                    color=0xDD2222)
-                await ctx.send(embed=embed)
-                await ctx.message.delete()
-                return
-            else:
-                if ctx.message.attachments==True:
-                    for url in ctx.message.attachments:
-                        check.resubmitted = True
-                        db.save(check)
-                        embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
-                                      colour=0xF893B2)
+            check = table.find({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
+            for n in check:
+                if n['resubmitted'] == True:
+                    await ctx.send(f"{ctx.author.mention} You've already resubmitted for {prompt} once already, you can resubmit only once")
+                    return
+
+                if n['prompts'].lower() == prompt.lower():
+                    if ctx.message.attachments:
+                        for url in ctx.message.attachments:
+                            table.update_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, 'resubmitted':False}, {"$set":{"content":url.url, "resubmitted":True}})
+                            embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
+                                          colour=0xF893B2)
+                            await ctx.send(embed=embed)
+                            return
+                    else:
+                        embed = Embed(
+                            description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
+                            color=0xDD2222)
+                        embed.set_image(url='https://i.imgur.com/tqW93GO.png')
                         await ctx.send(embed=embed)
+                        await ctx.message.delete()
                         return
                 else:
-                    embed = Embed(
-                        description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
-                        color=0xDD2222)
-                    embed.set_image(url='https://i.imgur.com/tqW93GO.png')
-                    await ctx.send(embed=embed)
-                    await ctx.message.delete()
-                    return
+                    await ctx.send(f"{ctx.author.mention} You haven't submitted for {prompt} yet.")
 
     @commands.command()
     @commands.has_any_role('Mods')
