@@ -47,19 +47,11 @@ class dat(commands.Cog):
             await ctx.message.delete()
             return
 
-        elif prompt != None:
+        elif prompt.lower() in prompt_list:
             regx = re.compile(f"^{prompt}$", re.IGNORECASE)
-            check = table.find({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
-            ch = [n['prompts'] for n in check]
-            for n in check:
-                if n['prompts'] == prompt.lower():
-                    embed = Embed(
-                        description=f":x: {ctx.author.mention} You already submitted for this prompt already, if you want to resubmit you can one time for each prompt using .resubmit 'prompt name' with uploading the correct drawing in one message",
-                        color=0xDD2222)
-                    await ctx.send(embed=embed)
-                    await ctx.message.delete()
-                    return
-            if ch == []:
+            check = table.find_one({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
+            print(check)
+            if check == None:
                 if ctx.message.attachments:
                     for url in ctx.message.attachments:
                         table.insert_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, "content":url.url, 'resubmitted':False})
@@ -75,6 +67,16 @@ class dat(commands.Cog):
                     await ctx.send(embed=embed)
                     await ctx.message.delete()
                     return
+
+            if check['prompts'] == prompt.lower():
+                embed = Embed(
+                    description=f":x: {ctx.author.mention} You already submitted for this prompt already, if you want to resubmit you can one time for each prompt using .resubmit 'prompt name' with uploading the correct drawing in one message",
+                    color=0xDD2222)
+                await ctx.send(embed=embed)
+                await ctx.message.delete()
+                return
+
+
 
     @commands.command()
     async def resubmit(self, ctx, *, prompt=None):
@@ -115,30 +117,31 @@ class dat(commands.Cog):
 
         elif prompt != None:
             regx = re.compile(f"^{prompt}$", re.IGNORECASE)
-            check = table.find({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
-            for n in check:
-                if n['resubmitted'] == True:
-                    await ctx.send(f"{ctx.author.mention} You've already resubmitted for {prompt} once already, you can resubmit only once")
-                    return
+            check = table.find_one({"authorid":ctx.author.id, "prompts":regx, "guildid":ctx.guild.id})
+            if check==None:
+                await ctx.send(f"{ctx.author.mention} You haven't submitted for {prompt} yet.")
+                return
 
-                if n['prompts'].lower() == prompt.lower():
-                    if ctx.message.attachments:
-                        for url in ctx.message.attachments:
-                            table.update_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, 'resubmitted':False}, {"$set":{"content":url.url, "resubmitted":True}})
-                            embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
-                                          colour=0xF893B2)
-                            await ctx.send(embed=embed)
-                            return
-                    else:
-                        embed = Embed(
-                            description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
-                            color=0xDD2222)
-                        embed.set_image(url='https://i.imgur.com/tqW93GO.png')
+            elif check['resubmitted'] == True:
+                await ctx.send(f"{ctx.author.mention} You've already resubmitted for {prompt} once already, you can resubmit only once")
+                return
+
+            elif check['prompts'].lower() == prompt.lower():
+                if ctx.message.attachments:
+                    for url in ctx.message.attachments:
+                        table.update_one({"guildid":ctx.guild.id, "authorid":ctx.message.author.id, "prompts":prompt, 'resubmitted':False}, {"$set":{"content":url.url, "resubmitted":True}})
+                        embed = Embed(description=f"{ctx.author.mention} __**Submitted!**__ \n**Prompt:** {prompt} \n**Tag's content: {url.url}**",
+                                      colour=0xF893B2)
                         await ctx.send(embed=embed)
-                        await ctx.message.delete()
                         return
                 else:
-                    await ctx.send(f"{ctx.author.mention} You haven't submitted for {prompt} yet.")
+                    embed = Embed(
+                        description=f":x: {ctx.author.mention} Please upload a drawing you're submitting for together with the command like this:",
+                        color=0xDD2222)
+                    embed.set_image(url='https://i.imgur.com/tqW93GO.png')
+                    await ctx.send(embed=embed)
+                    await ctx.message.delete()
+                    return
 
     @commands.command()
     @commands.has_any_role('Mods')
