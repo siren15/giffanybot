@@ -15,6 +15,18 @@ from dateutil.relativedelta import *
 from customchecks import *
 import random
 
+async def send_dm(ctx, user, action, a, reason):
+        try:
+            embed = Embed(description=f"**You have been {action} in {ctx.guild}** | {reason}",
+                          colour=0xF893B2)
+            await user.send(embed=embed)
+        except:
+            embed = Embed(colour=0xF893B2,
+                          timestamp=datetime.utcnow())
+            embed.set_author(name=f"Couldn't DM {user}, {a} has been logged | {reason}", icon_url=user.avatar_url)
+            embed.set_footer(text=f'Member ID: {user.id}')
+            await ctx.send(embed=embed)
+
 def random_string_generator():
     characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'
     result=''
@@ -86,6 +98,8 @@ class Moderation(commands.Cog):
                     daytime = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
                     table.insert_one({"strikeid":str(sid), "guildid":int(ctx.guild.id), "user":int(member.id), "moderator":int(ctx.author.id), "action":str("Ban"), "reason":str(reason), "day":daytime})
 
+                    await send_dm(ctx, member, "banned", "ban", reason=reason)
+
                     await ctx.guild.ban(user=discord.Object(id=int(member.id)), reason=reason, delete_message_days=0)
                     embed = discord.Embed(description=f"{member} **was banned** | {reason} \n**User ID:** {member.id} \n**Actioned by:** {ctx.author.mention}",
                                           colour=0xF893B2,
@@ -109,6 +123,8 @@ class Moderation(commands.Cog):
 
                 daytime = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
                 table.insert_one({"strikeid":str(sid), "guildid":int(ctx.guild.id), "user":int(user.id), "moderator":int(ctx.author.id), "action":str("Ban"), "reason":str(reason), "day":daytime})
+
+                await send_dm(ctx, member, "banned", "ban", reason=reason)
 
                 await ctx.guild.ban(discord.Object(id=int(user.id)), reason=reason, delete_message_days=0)
                 embed = discord.Embed(description=f"{user} **was banned** | {reason} \n**User ID:** {user.id} \n**Actioned by:** {ctx.author.mention}",
@@ -191,6 +207,8 @@ class Moderation(commands.Cog):
                     daytime = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
                     table.insert_one({"strikeid":str(sid), "guildid":int(ctx.guild.id), "user":int(member.id), "moderator":int(ctx.author.id), "action":str("Ban"), "reason":str(reason), "day":daytime})
 
+                    await send_dm(ctx, member, "banned", "ban", reason=reason)
+
                     await ctx.guild.ban(user=discord.Object(id=int(member.id)), reason=reason, delete_message_days=int(nod))
                     embed = discord.Embed(description=f"{member} **was banned** | {reason} \n**User ID:** {member.id} \n**Actioned by:** {ctx.author.mention}\n {nod} days worth of messages deleted",
                                           colour=0xF893B2,
@@ -214,6 +232,8 @@ class Moderation(commands.Cog):
 
                 daytime = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
                 table.insert_one({"strikeid":str(sid), "guildid":int(ctx.guild.id), "user":int(user.id), "moderator":int(ctx.author.id), "action":str("Ban"), "reason":str(reason), "day":daytime})
+
+                await send_dm(ctx, member, "banned", "ban", reason=reason)
 
                 await ctx.guild.ban(discord.Object(id=int(user.id)), reason=reason, delete_message_days=int(nod))
                 embed = discord.Embed(description=f"{user} **was banned** | {reason} \n**User ID:** {user.id} \n**Actioned by:** {ctx.author.mention}\n {nod} days worth of messages deleted",
@@ -330,6 +350,8 @@ class Moderation(commands.Cog):
                     diff = relativedelta(endtime,  datetime.utcnow())
                     ends_in = f"{diff.years} Y {diff.months} M {diff.days} D {diff.hours} H {diff.minutes} min"
 
+                    await send_dm(ctx, member, "temp banned", "temp ban", reason=reason)
+
                     await ctx.guild.ban(discord.Object(id=int(member.id)), reason=reason, delete_message_days=0)
                     embed = discord.Embed(description=f"{member} **was temporarily banned** | {reason} \n**User ID:** {member.id} \n**Actioned by:** {ctx.author.mention}\nDuration: {ends_in}",
                                           colour=0xF893B2,
@@ -354,6 +376,8 @@ class Moderation(commands.Cog):
 
                 diff = relativedelta(endtime,  datetime.utcnow())
                 ends_in = f"{diff.years} Y {diff.months} M {diff.days} D {diff.hours} H {diff.minutes} min"
+
+                await send_dm(ctx, member, "temp banned", "temp ban", reason=reason)
 
                 await ctx.guild.ban(discord.Object(id=int(user.id)), reason=reason, delete_message_days=0)
                 embed = discord.Embed(description=f"{user} **was temporarily banned** | {reason} \n**User ID:** {user.id} \n**Actioned by:** {ctx.author.mention}\nDuration: {ends_in}",
@@ -526,6 +550,7 @@ class Moderation(commands.Cog):
             return
 
         if ctx.message.author.top_role.position > member.top_role.position:
+            await send_dm(ctx, member, "kicked", "kick", reason=reason)
             await member.kick(reason=reason)
             embed = discord.Embed(description=f" {member.mention} **was kicked** for {reason} \n**Member ID:** {member.id} \n**Actioned by:** {ctx.author.mention}",
                                   colour=discord.Colour.from_rgb(119, 178, 85),
@@ -787,7 +812,16 @@ class Moderation(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-
+        try:
+            embed = Embed(description=f"**You have been muted in {ctx.guild} for {time} {type}** | {reason}",
+                          colour=0xF893B2)
+            await member.send(embed=embed)
+        except:
+            embed = Embed(colour=0xF893B2,
+                          timestamp=datetime.utcnow())
+            embed.set_author(name=f"Couldn't DM {user}, mute has been logged | {reason}", icon_url=user.avatar_url)
+            embed.set_footer(text=f'Member ID: {user.id}')
+            await ctx.send(embed=embed)
 
     @commands.command()
     @bot_has_permissions(manage_roles=True)
