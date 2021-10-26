@@ -18,38 +18,7 @@ class scambotfilter(commands.Cog):
         if (message.author == self.bot.user) or (message.author.id == 650041398535389206):
             return
 
-        def geturl(string):
-            regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-            url = re.findall(regex,string)
-            return [x[0] for x in url]
-
-        def random_string_generator():
-            characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'
-            result=''
-            for i in range(0, 8):
-                result += random.choice(characters)
-            return result
-
-        url = geturl(message.content)
-        for url in url:
-            url = url
-
-        url = urlparse(url).netloc
-        if 'www.' in str(url):
-            url = url.replace('www.','')
-
-        scam_links = requests.get('https://api.hyperphish.com/gimme-domains').content
-        scam_links = scam_links.decode("UTF-8").replace("[",'')
-        scam_links = scam_links.replace("]", '')
-        scam_links = scam_links.replace('"','')
-        scam_links = scam_links.split(',')
-
-        is_scam = False
-
-        if url in scam_links:
-            is_scam = True
-
-        elif ("@everyone" in message.content) and ("nitro" in message.content):
+        if ("@everyone" in message.content) and ("nitro" in message.content):
             is_scam = True
 
         if is_scam == True:
