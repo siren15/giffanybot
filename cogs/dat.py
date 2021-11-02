@@ -184,6 +184,9 @@ class dat(commands.Cog):
                 names = [f"{author}[{author.id}]\n"]
                 sub_count = [f"{counter}\n"]
 
+                t = [f"{author}[{author.id}]|{counter}"]
+        await ctx.send(t)
+
         s = 0
         e = 1
         counter = 1
