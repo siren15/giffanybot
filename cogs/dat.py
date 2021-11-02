@@ -160,6 +160,17 @@ class dat(commands.Cog):
                 fl = fl + n
             return fl
 
+        def newpage(names, counter, guild, pages):
+            embed = Embed(description=f"__**List of all that submitted**__",
+            colour=0xF893B2)
+            embed.add_field(name="Author:", value=f"{names}")
+            embed.add_field(name="Count:", value=f"{counter}")
+            embed.set_footer(text=pages)
+            return embed
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['⬅️', '➡️']
+
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['dat']
@@ -170,10 +181,47 @@ class dat(commands.Cog):
                 counter = table.count_documents({"guildid":ctx.guild.id, "authorid":n["authorid"]})
                 author = ctx.guild.get_member(p["authorid"])
 
-                names = [f"{author}|{author.id}: {counter}\n"]
-                test = create_list(names, 100, 0, 1)
+                names = [f"{author}[{author.id}]\n"]
+                sub_count = [f"{counter}\n"]
 
-        await ctx.send(test)
+        s = 0
+        e = 1
+        counter = 1
+
+        nc = list(chunks(names, 20))
+
+        footer = f"Page:{counter}|{len(nc)}"
+        embedl = await ctx.send(embed=newpage(create_list(names, 20, s, e), create_list(sub_count, 20, s, e), ctx.guild, footer))
+        await embedl.add_reaction('⬅️')
+        await embedl.add_reaction('➡️')
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+
+            except asyncio.TimeoutError:
+                await embedl.clear_reactions()
+                break
+
+            if (reaction.emoji == '➡️') and (counter < len(nc)):
+                counter = counter + 1
+                s = s + 1
+                e = e + 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(create_list(names, 20, s, e), create_list(sub_count, 20, s, e), ctx.guild, footer))
+                await embedl.remove_reaction('➡️', ctx.author)
+            else:
+                await embedl.remove_reaction('➡️', ctx.author)
+
+            if (reaction.emoji == '⬅️') and (counter > 1):
+                counter = counter - 1
+                s = s - 1
+                e = e - 1
+                footer = f"Page:{counter}|{len(nc)}"
+                await embedl.edit(embed=newpage(create_list(names, 20, s, e), create_list(sub_count, 20, s, e), ctx.guild, footer))
+                await embedl.remove_reaction('⬅️', ctx.author)
+            else:
+                await embedl.remove_reaction('⬅️', ctx.author)
 
 
 def setup(bot):
