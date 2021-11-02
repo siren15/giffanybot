@@ -147,6 +147,19 @@ class dat(commands.Cog):
     @commands.command()
     @commands.has_any_role('Mods')
     async def submissions(self, ctx):
+        def chunks(l, n):
+            n = max(1, n)
+            return (l[i:i+n] for i in range(0, len(l), n))
+
+        def create_list(lst, n, s, e):
+            lst = list(chunks(lst, n))
+            for i in lst[s:e]:
+                lst = i
+            fl = ''
+            for n in lst:
+                fl = fl + n
+            return fl
+
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['dat']
@@ -156,7 +169,11 @@ class dat(commands.Cog):
             for p in prompts:
                 counter = table.count_documents({"guildid":ctx.guild.id, "authorid":n["authorid"]})
                 author = ctx.guild.get_member(p["authorid"])
-        await ctx.send(f"```\nAuthor: | Counter:\n{author}: {counter}\n```")
+
+                names = [f"{author}|{author.id}: {counter}\n"]
+                test = create_list(names, 100, 0, 1)
+
+        await ctx.send(test)
 
 
 def setup(bot):
