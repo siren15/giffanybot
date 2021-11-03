@@ -59,7 +59,7 @@ class giverole(commands.Cog):
     @role.command()
     @commands.has_permissions(administrator=True)
     @has_active_cogs("giverole")
-    async def givemany(self, ctx, members: Greedy[discord.Member], *, role: discord.Role=None):
+    async def givemany(self, ctx, members: Greedy[discord.Member], role: discord.Role=None):
         if len(members) == 0:
             embed = Embed(description=f":x: Please provide member(s)",
                           color=0xDD2222)
