@@ -42,7 +42,7 @@ class giverole(commands.Cog):
         if role in member.roles:
             await member.remove_roles(role)
             embed = discord.Embed(
-                description=f"I have removed {roles.mention} from {member.mention}",
+                description=f"I have removed {role.mention} from {member.mention}",
                 timestamp=datetime.utcnow(),
                 color=0xF893B2)
             embed.set_footer(text=f'Actioned by: {ctx.author} / {ctx.author.id}')
@@ -50,11 +50,100 @@ class giverole(commands.Cog):
         elif role not in member.roles:
             await member.add_roles(role)
             embed = discord.Embed(
-                description=f"I have assigned {roles.mention} to {member.mention}",
+                description=f"I have assigned {role.mention} to {member.mention}",
                 timestamp=datetime.utcnow(),
                 color=0xF893B2)
             embed.set_footer(text=f'Actioned by: {ctx.author} / {ctx.author.id}')
             await ctx.send(embed=embed)
+
+    @role.command()
+    @commands.has_permissions(administrator=True)
+    @has_active_cogs("giverole")
+    async def givemany(self, ctx, members: Greedy[discord.Member], *, role: discord.Role=None):
+        if len(members) == 0:
+            embed = Embed(description=f":x: Please provide member(s)",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+            return
+
+        mems = [member for member in members if role not in member.roles]
+
+        has_role_mem_list = []
+        for member in members:
+            if member not in mems:
+                has_role_mem_list.append(member.mention)
+
+
+        mem_list = []
+        for member in mems:
+            async with ctx.typing():
+                await member.add_roles(role)
+                if member not in mem_list:
+                    mem_list.append(member.mention)
+
+        if has_role_mem_list != []:
+            if len(has_role_mem_list) > 1:
+                embed = Embed(description=':x:'+' '.join(has_role_mem_list)+f" already have {role.mention} assigned",
+                              color=0xDD2222)
+                await ctx.send(embed=embed)
+            else:
+                embed = Embed(description=':x:'+' '.join(has_role_mem_list)+f" already has {role.mention} assigned",
+                              color=0xDD2222)
+                await ctx.send(embed=embed)
+
+        if mem_list == []:
+            return
+        embed = discord.Embed(
+            description=f"I have assigned {role.mention} to "+' '.join(mem_list),
+            timestamp=datetime.utcnow(),
+            color=0xF893B2)
+        embed.set_footer(text=f'Actioned by: {ctx.author} / {ctx.author.id}')
+        await ctx.send(embed=embed)
+
+    @role.command()
+    @commands.has_permissions(administrator=True)
+    @has_active_cogs("giverole")
+    async def removemany(self, ctx, members: Greedy[discord.Member], *, role: discord.Role=None):
+        if len(members) == 0:
+            embed = Embed(description=f":x: Please provide member(s)",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+            return
+
+        mems = [member for member in members if role in member.roles]
+
+        hasnt_role_mem_list = []
+        for member in members:
+            if member not in mems:
+                hasnt_role_mem_list.append(member.mention)
+
+
+        mem_list = []
+        for member in mems:
+            async with ctx.typing():
+                await member.remove_roles(role)
+                if member not in mem_list:
+                    mem_list.append(member.mention)
+
+        if hasnt_role_mem_list != []:
+            if len(hasnt_role_mem_list) > 1:
+                embed = Embed(description=':x:'+' '.join(hasnt_role_mem_list)+f" don't have {role.mention} assigned",
+                              color=0xDD2222)
+                await ctx.send(embed=embed)
+            else:
+                embed = Embed(description=':x:'+' '.join(hasnt_role_mem_list)+f" doesn't have {role.mention} assigned",
+                              color=0xDD2222)
+                await ctx.send(embed=embed)
+
+        if mem_list == []:
+            return
+        embed = discord.Embed(
+            description=f"I have removed {role.mention} from "+' '.join(mem_list),
+            timestamp=datetime.utcnow(),
+            color=0xF893B2)
+        embed.set_footer(text=f'Actioned by: {ctx.author} / {ctx.author.id}')
+        await ctx.send(embed=embed)
+
 
     @role.command(aliases=['add'])
     @commands.has_permissions(administrator=True)
