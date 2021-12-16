@@ -357,7 +357,7 @@ class Tags(commands.Cog):
     @user_has_role()
     @is_user_blacklisted()
     @has_active_cogs("tags")
-    async def delete(self, ctx, name=None):
+    async def delete(self, ctx, *, name=None):
         """Lets me delete tags."""
         if name == None:
             embed = Embed(
@@ -369,8 +369,9 @@ class Tags(commands.Cog):
         cluster = Mongo.connect()
         db = cluster["giffany"]
         table = db['tag']
+        regx = re.compile(f"^{name}$", re.IGNORECASE)
 
-        names = table.find({"names":name, "guild_id":ctx.guild.id, "author_id":ctx.author.id})
+        names = table.find({"names":regx, "guild_id":ctx.guild.id, "author_id":ctx.author.id})
         names = [n['name'] for n in names]
         if names == []:
             embed = Embed(description=f":x: I couldn't find a tag with the name **{name}** that you own.",
@@ -387,10 +388,10 @@ class Tags(commands.Cog):
             embed.set_footer(text="Author ID:{0}".format(ctx.author.id))
             await ctx.send(embed=embed)
 
-    @tag.command()
+    @tag.command(aliases=['aremove'])
     @commands.has_permissions(administrator=True)
     @has_active_cogs("tags")
-    async def adelete(self, ctx, name=None):
+    async def adelete(self, ctx, *, name=None):
         """[Admin] Delete any tag."""
         if name == None:
             embed = Embed(
@@ -399,63 +400,54 @@ class Tags(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['tag']
+        db = await odm.connect()
+        regx = re.compile(f"^{name}$", re.IGNORECASE)
+        names = await db.find_one(tag, {"names":regx, "guild_id":ctx.guild.id})
 
-        names = table.find({"names":name, "guild_id":ctx.guild.id})
-        names = [n['name'] for n in names]
-        if names == []:
-            embed = Embed(description=f":x: I couldn't find a tag with the name **{name}**",
-                          color=0xDD2222)
-            await ctx.send(embed=embed)
-            return
-
+        if names:
+          print(names)
+          await ctx.send(embed=Embed(description=f"Tag `{name}` deleted by {ctx.author}|{reason}\nContent: {names.content}\nTag Author ID: {names.author_id}",
+                         colour=0xF893B2))
+          await db.delete(names)
+          return
         else:
-            table.delete_one({"guild_id":ctx.guild.id, "names":name})
-            embed = discord.Embed(title="Tag deleted by an administrator",
-                                  description=f"{name} was deleted by {ctx.author.mention}",
-                                  timestamp=datetime.datetime.utcnow(),
-                                  color=0xF893B2)
-            await ctx.send(embed=embed)
+          embed = Embed(description=f":x: I couldn't find a tag with the name **{name}**",
+                        color=0xDD2222)
+          await ctx.send(embed=embed)
+          return
 
     @tag.command()
     @commands.has_permissions(administrator=True)
     @has_active_cogs("tags")
     async def aedit(self, ctx, tagname=None, *, content=None):
         """[Admin] Edit any tag"""
-        cluster = Mongo.connect()
-        db = cluster["giffany"]
-        table = db['tag']
-
         if tagname == None:
             embed = Embed(
                 description=":x: Please provide a tag name",
                 color=0xDD2222)
             await ctx.send(embed=embed)
             return
-
-        tn = table.find({"names":tagname, "guild_id":ctx.guild.id})
-        name = [name.names for name in tn]
-        if name == []:
-            embed = Embed(description=":x: Couldn't find a tag with that name",
-                          color=0xDD2222)
-            await ctx.send(embed=embed)
-            return
-
-        if content == None:
+        elif content == None:
             embed = Embed(
                 description=":x: Please provide tag content",
                 color=0xDD2222)
             await ctx.send(embed=embed)
             return
-
-        table.update_one({"names":tagname, "guild_id":ctx.guild.id}, {"$set":{"content":content}})
-        embed = discord.Embed(title="Tag updated by admin",
-                              timestamp=datetime.utcnow(),
-                              colour=0xF893B2)
-        embed.add_field(name=f"{tagname}", value=f"{content}", inline=False)
-        await ctx.send(embed=embed)
+        db = odm.connect()
+        tag = await db.find_one(tag, {'guild_id': ctx.guild.id, 'names':name})
+        if tag.names == None:
+            embed = Embed(description=f":x: I couldn't find a tag with the name **{name}**",
+                          color=0xDD2222)
+            await ctx.send(embed=embed)
+            return
+        else:
+            tag.content = content
+            await db.save(tag)
+            embed = discord.Embed(title="Tag updated by admin",
+                                  timestamp=datetime.utcnow(),
+                                  colour=0xF893B2)
+            embed.add_field(name=f"{tagname}", value=f"{content}", inline=False)
+            await ctx.send(embed=embed)
 
     @tag.command()
     @user_has_role()
@@ -536,8 +528,6 @@ class Tags(commands.Cog):
                 await embedl.remove_reaction('⬅️', ctx.author)
             else:
                 await embedl.remove_reaction('⬅️', ctx.author)
-        cursor.close()
-        db1.close()
 
     @tag.command(aliases=['i'])
     @has_active_cogs("tags")
