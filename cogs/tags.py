@@ -391,7 +391,7 @@ class Tags(commands.Cog):
     @tag.command(aliases=['aremove'])
     @commands.has_permissions(administrator=True)
     @has_active_cogs("tags")
-    async def adelete(self, ctx, *, name=None):
+    async def adelete(self, ctx, name=None, *, reason=None):
         """[Admin] Delete any tag."""
         if name == None:
             embed = Embed(
