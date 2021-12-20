@@ -18,7 +18,7 @@ class scambotfilter(commands.Cog):
         if (message.author == self.bot.user) or (message.author.id == 650041398535389206):
             return
 
-        if ("@everyone" in message.content) and ("nitro" in message.content):
+        if ("@everyone" in message.content) and ("nitro" in message.content.lower()):
             is_scam = True
 
         if is_scam == True:
