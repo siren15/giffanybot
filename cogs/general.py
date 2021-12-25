@@ -98,6 +98,7 @@ class General(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def echo(self, ctx, *, message):
         await ctx.send(message)
+        await ctx.message.delete()
 
     @commands.command()
     @commands.has_permissions(administrator=True)
