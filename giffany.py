@@ -520,7 +520,7 @@ async def unload(ctx, extension):
     print(f"unloaded {extension}")
 
 for filename in os.listdir('./cogs'):
-    if filename.endswith('.py'):
+    if filename.endswith('.py') and (filename.lower() != 'persistentroles.py') and (filename.lower() != 'moderation.py'):
         bot.load_extension(f'cogs.{filename[:-3]}')
 
 bot.run(token)
